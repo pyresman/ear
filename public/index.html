@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💣 EARBOMB - Selbstzerstörende Audios</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: system-ui, sans-serif;
+            background: linear-gradient(135deg, #0f0f1a, #1a1a2e);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            padding: 20px;
+        }
+        .container {
+            background: rgba(255,255,255,0.03);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 480px;
+            width: 100%;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 25px 80px rgba(0,0,0,0.6);
+        }
+        h1 {
+            text-align: center;
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #ff6b6b, #ffa500);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .subtitle { text-align: center; color: #888; margin-bottom: 30px; }
+        
+        .tabs { display: flex; gap: 8px; margin-bottom: 25px; }
+        .tab {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            background: rgba(0,0,0,0.3);
+            color: rgba(255,255,255,0.7);
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+        .tab.active { background: linear-gradient(135deg, #ff6b6b, #ffa500); color: #fff; }
+        
+        .section { display: none; }
+        .section.active { display: block; }
+        
+        .record-area { text-align: center; padding: 30px 0; }
+        .record-btn {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            border: 4px solid transparent;
+            background: conic-gradient(#ff6b6b, #ffa500, #ff6b6b);
+            cursor: pointer;
+            margin: 0 auto 20px;
+            display: block;
+            position: relative;
+            transition: all 0.3s;
+        }
+        .record-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #1a1a2e;
+        }
+        .record-btn::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #ff4444;
+        }
+        .record-btn.recording::before { width: 40px; height: 40px; border-radius: 8px; }
+        .record-btn.recording::after { display: none; }
+        .record-btn.recording { animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { box-shadow: 0 0 30px rgba(255,68,68,0.5); } 50% { box-shadow: 0 0 60px rgba(255,68,68,0.8); } }
+        
+        .timer { font-size: 2.5em; font-family: monospace; margin: 15px 0; letter-spacing: 4px; }
+        .status { color: #888; font-size: 0.9em; }
+        .status.recording { color: #ff4444; animation: blink 1s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        
+        .options { background: rgba(0,0,0,0.3); border-radius: 16px; padding: 20px; margin: 20px 0; }
+        .option-group { margin-bottom: 15px; }
+        .option-group:last-child { margin-bottom: 0; }
+        .option-label { display: block; margin-bottom: 8px; color: #888; font-size: 0.9em; }
+        
+        select {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(0,0,0,0.3);
+            color: #fff;
+            font-size: 1em;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 15px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #ff6b6b, #ffa500);
+            color: #fff;
+        }
+        .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(255,107,107,0.4); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .result { display: none; text-align: center; animation: fadeIn 0.4s; }
+        .result.show { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } }
+        
+        .code-display {
+            font-size: 3em;
+            font-family: monospace;
+            letter-spacing: 8px;
+            color: #ff6b6b;
+            background: rgba(0,0,0,0.4);
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+        
+        .link-display {
+            background: rgba(0,0,0,0.4);
+            padding: 15px;
+            border-radius: 10px;
+            font-family: monospace;
+            font-size: 0.85em;
+            word-break: break-all;
+            margin: 15px 0;
+        }
+        
+        .qr-section { text-align: center; margin: 20px 0; }
+        .qr-canvas { background: #fff; border-radius: 12px; padding: 15px; display: inline-block; }
+        
+        .btn-group { display: flex; gap: 10px; }
+        .btn-group .btn { margin-top: 0; flex: 1; }
+        
+        /* Receive section */
+        .input-group { margin-bottom: 20px; }
+        .code-input {
+            width: 100%;
+            padding: 20px;
+            text-align: center;
+            font-size: 1.5em;
+            font-family: monospace;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            border-radius: 12px;
+            border: 2px solid rgba(255,255,255,0.2);
+            background: rgba(0,0,0,0.3);
+            color: #fff;
+        }
+        .code-input::placeholder { color: #666; letter-spacing: 4px; }
+        .code-input:focus { outline: none; border-color: #ff6b6b; }
+        
+        /* Player */
+        .player { display: none; text-align: center; padding: 30px 0; }
+        .player.show { display: block; }
+        .bomb-icon { font-size: 5em; animation: float 2s ease-in-out infinite; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        
+        .countdown { font-size: 2em; color: #ff6b6b; margin: 20px 0; }
+        .visualizer { height: 80px; background: rgba(0,0,0,0.4); border-radius: 12px; margin: 20px 0; }
+        
+        .destroy-btn {
+            background: linear-gradient(135deg, #ff4444, #ff0000);
+        }
+        
+        .explosion {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, #ffff00, #ff6600, #ff0000);
+            display: none;
+            z-index: 9999;
+            animation: explode 1.5s forwards;
+        }
+        @keyframes explode {
+            0% { opacity: 0; transform: scale(0); }
+            20% { opacity: 1; transform: scale(1.5); }
+            100% { opacity: 0; transform: scale(3); }
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(0,0,0,0.95);
+            color: #fff;
+            padding: 15px 30px;
+            border-radius: 12px;
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 10001;
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .toast.success { border: 1px solid rgba(0,255,136,0.5); }
+        .toast.error { border: 1px solid rgba(255,68,68,0.5); }
+        
+        .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .footer p { font-size: 0.85em; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💣 EARBOMB</h1>
+        <p class="subtitle">Selbstzerstörende Audionachrichten</p>
+        
+        <div class="tabs">
+            <button class="tab active" data-tab="create">🎙️ Senden</button>
+            <button class="tab" data-tab="receive">📩 Empfangen</button>
+        </div>
+        
+        <div id="createSection" class="section active">
+            <div class="record-area">
+                <button class="record-btn" id="recordBtn"></button>
+                <div class="timer" id="timer">00:00</div>
+                <p class="status" id="status">Klicke zum Aufnehmen</p>
+            </div>
+            
+            <div class="options">
+                <div class="option-group">
+                    <label class="option-label"> Zerstörung nach:</label>
+                    <select id="destroyMode">
+                        <option value="play">Einfachem Anhören</option>
+                        <option value="time">Zeitablauf</option>
+                        <option value="both">Beidem</option>
+                    </select>
+                </div>
+                <div class="option-group" id="timeGroup" style="display:none;">
+                    <label class="option-label">Gültig für:</label>
+                    <select id="destroyTime">
+                        <option value="60">1 Minute</option>
+                        <option value="300">5 Minuten</option>
+                        <option value="3600" selected>1 Stunde</option>
+                        <option value="86400">24 Stunden</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button class="btn btn-primary" id="sendBtn" disabled>🔗 Code Generieren</button>
+            
+            <div class="result" id="result">
+                <div class="code-display" id="codeDisplay">------</div>
+                
+                <div class="link-display" id="linkDisplay"></div>
+                
+                <div class="qr-section">
+                    <div class="qr-canvas">
+                        <canvas id="qrCanvas" width="150" height="150"></canvas>
+                    </div>
+                </div>
+                
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="copyBtn">📋 Kopieren</button>
+                    <button class="btn btn-primary" id="newBtn">➕ Neu</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="receiveSection" class="section">
+            <div class="input-group">
+                <input type="text" class="code-input" id="codeInput" placeholder="CODE EINGEBEN" maxlength="8" autocomplete="off">
+            </div>
+            
+            <button class="btn btn-primary" id="loadBtn">🔓 Abrufen</button>
+            
+            <div class="player" id="player">
+                <div class="bomb-icon">💣</div>
+                <div class="countdown" id="countdown">0:00</div>
+                <canvas class="visualizer" id="visualizer"></canvas>
+                <button class="btn destroy-btn" id="destroyBtn">💥 JETZT ZERSTÖREN</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="explosion" id="explosion"></div>
+    <div class="toast" id="toast"></div>
+
+    <script>
+        let mediaRecorder, audioChunks = [], audioBlob = null, isRecording = false;
+        let timerInterval, seconds = 0, currentCode = null, audioElement = null;
+        
+        const recordBtn = document.getElementById('recordBtn');
+        const timer = document.getElementById('timer');
+        const status = document.getElementById('status');
+        const sendBtn = document.getElementById('sendBtn');
+        const result = document.getElementById('result');
+        const codeDisplay = document.getElementById('codeDisplay');
+        const linkDisplay = document.getElementById('linkDisplay');
+        const destroyMode = document.getElementById('destroyMode');
+        const timeGroup = document.getElementById('timeGroup');
+        
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab + 'Section').classList.add('active');
+            });
+        });
+        
+        destroyMode.addEventListener('change', () => {
+            timeGroup.style.display = destroyMode.value !== 'play' ? 'block' : 'none';
+        });
+        
+        recordBtn.addEventListener('click', () => isRecording ? stopRecording() : startRecording());
+        
+        async function startRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+                
+                mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                mediaRecorder.onstop = () => {
+                    audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    sendBtn.disabled = false;
+                    stream.getTracks().forEach(t => t.stop());
+                };
+                
+                mediaRecorder.start();
+                isRecording = true;
+                recordBtn.classList.add('recording');
+                status.textContent = '● AUFNAHME';
+                status.classList.add('recording');
+                
+                seconds = 0;
+                timerInterval = setInterval(() => {
+                    seconds++;
+                    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+                    const s = (seconds % 60).toString().padStart(2, '0');
+                    timer.textContent = `${m}:${s}`;
+                }, 1000);
+            } catch (err) {
+                toast('Mikrofonzugriff verweigert', 'error');
+            }
+        }
+        
+        function stopRecording() {
+            mediaRecorder.stop();
+            isRecording = false;
+            recordBtn.classList.remove('recording');
+            status.textContent = 'Aufnahme beendet';
+            status.classList.remove('recording');
+            clearInterval(timerInterval);
+        }
+        
+        sendBtn.addEventListener('click', async () => {
+            if (!audioBlob) return;
+            
+            sendBtn.disabled = true;
+            sendBtn.textContent = '⏳ Sende...';
+            
+            try {
+                const reader = new FileReader();
+                reader.onload = async () => {
+                    const base64 = reader.result.split(',')[1];
+                    
+                    const res = await fetch('/api/create', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            audio: base64,
+                            destroyMode: destroyMode.value,
+                            destroyTime: document.getElementById('destroyTime').value
+                        })
+                    });
+                    
+                    const data = await res.json();
+                    
+                    if (data.success) {
+                        currentCode = data.code;
+                        codeDisplay.textContent = data.code;
+                        linkDisplay.textContent = data.link;
+                        result.classList.add('show');
+                        sendBtn.style.display = 'none';
+                        generateQR(data.link);
+                        toast('Link kopiert!', 'success');
+                        navigator.clipboard.writeText(`${data.code}\n${data.link}`);
+                    } else {
+                        toast(data.error || 'Fehler', 'error');
+                    }
+                };
+                reader.readAsDataURL(audioBlob);
+            } catch (err) {
+                toast('Verbindungsfehler', 'error');
+            }
+            
+            sendBtn.disabled = false;
+            sendBtn.textContent = '🔗 Code Generieren';
+        });
+        
+        function generateQR(text) {
+            const canvas = document.getElementById('qrCanvas');
+            const ctx = canvas.getContext('2d');
+            const size = 150;
+            
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, size, size);
+            
+            const matrix = generateQRMatrix(text);
+            const cellSize = size / matrix.length;
+            
+            ctx.fillStyle = '#000';
+            for (let y = 0; y < matrix.length; y++) {
+                for (let x = 0; x < matrix.length; x++) {
+                    if (matrix[y][x]) ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+                }
+            }
+        }
+        
+        function generateQRMatrix(text) {
+            const size = 25;
+            const matrix = Array(size).fill().map(() => Array(size).fill(false));
+            const hash = text.split('').reduce((a, b) => ((a << 5) - a + b.charCodeAt(0)) | 0, 0);
+            
+            for (let i = 0; i < 7; i++) {
+                for (let j = 0; j < 7; j++) {
+                    if (i === 0 || i === 6 || j === 0 || j === 6 || (i >= 2 && i <= 4 && j >= 2 && j <= 4)) {
+                        matrix[i][j] = matrix[i + size - 7][j] = matrix[i][j + size - 7] = true;
+                    }
+                }
+            }
+            
+            for (let y = 7; y < size - 7; y++) {
+                for (let x = 7; x < size - 7; x++) {
+                    matrix[y][x] = ((hash >> ((x - 7) + (y - 7) * 3)) & 1) === 1;
+                }
+            }
+            return matrix;
+        }
+        
+        document.getElementById('copyBtn').addEventListener('click', () => {
+            navigator.clipboard.writeText(`${currentCode}\n${linkDisplay.textContent}`);
+            toast('Kopiert!', 'success');
+        });
+        
+        document.getElementById('newBtn').addEventListener('click', () => {
+            result.classList.remove('show');
+            sendBtn.style.display = 'block';
+            sendBtn.disabled = true;
+            audioBlob = null;
+            timer.textContent = '00:00';
+            status.textContent = 'Klicke zum Aufnehmen';
+        });
+        
+        // RECEIVE
+        const codeInput = document.getElementById('codeInput');
+        const loadBtn = document.getElementById('loadBtn');
+        const player = document.getElementById('player');
+        
+        codeInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        });
+        
+        loadBtn.addEventListener('click', async () => {
+            const code = codeInput.value.trim().toUpperCase();
+            if (!code) return;
+            
+            loadBtn.disabled = true;
+            loadBtn.textContent = '⏳ Lädt...';
+            
+            try {
+                const res = await fetch(`/${code}`);
+                const data = await res.json();
+                
+                if (data.exists) {
+                    const playRes = await fetch(`/${code}/play`, { method: 'POST' });
+                    const playData = await playRes.json();
+                    
+                    if (playData.success) {
+                        currentCode = code;
+                        startPlayer(playData.audio, data);
+                    } else {
+                        toast('Audio abgelaufen', 'error');
+                    }
+                } else {
+                    toast('Nicht gefunden', 'error');
+                }
+            } catch (err) {
+                toast('Fehler', 'error');
+            }
+            
+            loadBtn.disabled = false;
+            loadBtn.textContent = '🔓 Abrufen';
+        });
+        
+        function startPlayer(base64Audio, info) {
+            player.classList.add('show');
+            
+            const binaryString = atob(base64Audio);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
+            
+            const blob = new Blob([bytes.buffer], { type: 'audio/webm' });
+            audioElement = new Audio(URL.createObjectURL(blob));
+            audioElement.volume = 0.8;
+            audioElement.play();
+            
+            visualize(audioElement);
+            
+            let remaining = info.remaining;
+            const countdown = document.getElementById('countdown');
+            
+            const interval = setInterval(() => {
+                remaining--;
+                const m = Math.floor(remaining / 60);
+                const s = remaining % 60;
+                countdown.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+                
+                if (remaining <= 0) {
+                    clearInterval(interval);
+                    triggerExplosion();
+                }
+            }, 1000);
+            
+            document.getElementById('destroyBtn').onclick = () => {
+                clearInterval(interval);
+                audioElement.pause();
+                triggerExplosion();
+            };
+            
+            audioElement.onended = () => {
+                if (info.destroyMode === 'play' || info.destroyMode === 'both') {
+                    clearInterval(interval);
+                    triggerExplosion();
+                }
+            };
+        }
+        
+        function visualize(audio) {
+            const canvas = document.getElementById('visualizer');
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.offsetWidth * 2;
+            canvas.height = canvas.offsetHeight * 2;
+            ctx.scale(2, 2);
+            
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const source = audioCtx.createMediaElementSource(audio);
+            const analyser = audioCtx.createAnalyser();
+            analyser.fftSize = 256;
+            source.connect(analyser);
+            analyser.connect(audioCtx.destination);
+            
+            const data = new Uint8Array(analyser.frequencyBinCount);
+            
+            function draw() {
+                requestAnimationFrame(draw);
+                analyser.getByteFrequencyData(data);
+                ctx.fillStyle = 'rgba(0,0,0,0.4)';
+                ctx.fillRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
+                
+                const barW = canvas.offsetWidth / analyser.frequencyBinCount * 2;
+                let x = 0;
+                
+                for (let i = 0; i < analyser.frequencyBinCount; i++) {
+                    const h = (data[i] / 255) * canvas.offsetHeight;
+                    ctx.fillStyle = `hsl(${i * 2}, 80%, 50%)`;
+                    ctx.fillRect(x, canvas.offsetHeight - h, barW - 1, h);
+                    x += barW;
+                }
+            }
+            draw();
+        }
+        
+        function triggerExplosion() {
+            document.getElementById('explosion').style.display = 'block';
+            playSound();
+            setTimeout(() => {
+                document.getElementById('explosion').style.display = 'none';
+                player.classList.remove('show');
+                toast('🔒 Audio zerstört!', 'success');
+            }, 1500);
+        }
+        
+        function playSound() {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.frequency.setValueAtTime(150, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + 0.5);
+            gain.gain.setValueAtTime(0.5, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.5);
+        }
+        
+        function toast(msg, type = 'info') {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = `toast ${type} show`;
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+        
+        // Check if URL has code
+        if (location.pathname.length > 1) {
+            const code = location.pathname.slice(1).toUpperCase();
+            document.querySelector('[data-tab="receive"]').click();
+            codeInput.value = code;
+            setTimeout(() => loadBtn.click(), 500);
+        }
+    </script>
+</body>
+</html>
