@@ -624,13 +624,18 @@
             setTimeout(() => t.classList.remove('show'), 3000);
         }
         
-        // Check if URL has code
-        if (location.pathname.length > 1) {
-            const code = location.pathname.slice(1).toUpperCase();
-            document.querySelector('[data-tab="receive"]').click();
-            codeInput.value = code;
-            setTimeout(() => loadBtn.click(), 500);
+        function checkUrl() {
+            const hash = window.location.hash.slice(1);
+            if (hash && hash.length >= 6) {
+                document.querySelector('[data-tab="receive"]').click();
+                codeInput.value = hash.toUpperCase();
+                setTimeout(() => loadBtn.click(), 300);
+                history.replaceState(null, '', window.location.pathname);
+            }
         }
+        
+        window.addEventListener('hashchange', checkUrl);
+        checkUrl();
     </script>
 </body>
 </html>

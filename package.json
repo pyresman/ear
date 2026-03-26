@@ -1,14 +1,19 @@
 {
-  "name": "earbomb-service",
+  "name": "earbomb-cf",
   "version": "1.0.0",
-  "description": "Self-destructing audio service",
-  "main": "server.js",
+  "private": true,
   "scripts": {
-    "start": "node server.js"
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:create": "wrangler d1 create earbomb-db",
+    "db:init": "wrangler d1 execute earbomb-db --local --file=./schema.sql",
+    "db:init:remote": "wrangler d1 execute earbomb-db --remote --file=./schema.sql"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "multer": "^1.4.5-lts.1",
-    "better-sqlite3": "^9.4.3"
+    "hono": "^4.0.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240117.0",
+    "wrangler": "^3.0.0"
   }
 }

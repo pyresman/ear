@@ -1,0 +1,15 @@
+name = "earbomb"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+[site]
+bucket = "./public"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "earbomb-db"
+database_id = "YOUR_DATABASE_ID"
+
+[[kv_namespaces]]
+binding = "AUDIO"
+id = "YOUR_KV_ID"
