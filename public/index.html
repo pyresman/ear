@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>💣 EARBOMB - Selbstzerstörende Audios</title>
+    <title>EARBOMB - Self-Destructing Audio Messages</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -21,7 +21,7 @@
             backdrop-filter: blur(20px);
             border-radius: 24px;
             padding: 40px;
-            max-width: 480px;
+            max-width: 520px;
             width: 100%;
             border: 1px solid rgba(255,255,255,0.1);
             box-shadow: 0 25px 80px rgba(0,0,0,0.6);
@@ -102,6 +102,16 @@
         .option-group:last-child { margin-bottom: 0; }
         .option-label { display: block; margin-bottom: 8px; color: #888; font-size: 0.9em; }
         
+        input[type="password"], input[type="text"] {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(0,0,0,0.3);
+            color: #fff;
+            font-size: 1em;
+        }
+        
         select {
             width: 100%;
             padding: 12px 16px;
@@ -110,6 +120,22 @@
             background: rgba(0,0,0,0.3);
             color: #fff;
             font-size: 1em;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: #ff6b6b;
+        }
+        .checkbox-group label {
+            color: #aaa;
+            cursor: pointer;
         }
         
         .btn {
@@ -129,6 +155,11 @@
         }
         .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(255,107,107,0.4); }
         .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+        }
+        .btn-secondary:hover { background: rgba(255,255,255,0.2); }
         
         .result { display: none; text-align: center; animation: fadeIn 0.4s; }
         .result.show { display: block; }
@@ -153,15 +184,61 @@
             font-size: 0.85em;
             word-break: break-all;
             margin: 15px 0;
+            color: #aaa;
+        }
+        
+        .password-display {
+            background: rgba(255,107,107,0.2);
+            padding: 15px;
+            border-radius: 10px;
+            font-family: monospace;
+            margin: 15px 0;
+            border: 1px solid rgba(255,107,107,0.3);
         }
         
         .qr-section { text-align: center; margin: 20px 0; }
-        .qr-canvas { background: #fff; border-radius: 12px; padding: 15px; display: inline-block; }
+        .qr-container {
+            background: #fff;
+            border-radius: 16px;
+            padding: 20px;
+            display: inline-block;
+        }
+        #qrCanvas {
+            display: block;
+        }
+        
+        .share-options {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .share-btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+        .share-btn.whatsapp { background: #25D366; color: #fff; }
+        .share-btn.telegram { background: #0088cc; color: #fff; }
+        .share-btn.twitter { background: #1DA1F2; color: #fff; }
+        .share-btn.clipboard { background: rgba(255,255,255,0.1); color: #fff; }
+        .share-btn.native { background: linear-gradient(135deg, #ff6b6b, #ffa500); color: #fff; }
+        .share-btn:hover { transform: translateY(-2px); opacity: 0.9; }
         
         .btn-group { display: flex; gap: 10px; }
         .btn-group .btn { margin-top: 0; flex: 1; }
         
-        /* Receive section */
         .input-group { margin-bottom: 20px; }
         .code-input {
             width: 100%;
@@ -179,7 +256,6 @@
         .code-input::placeholder { color: #666; letter-spacing: 4px; }
         .code-input:focus { outline: none; border-color: #ff6b6b; }
         
-        /* Player */
         .player { display: none; text-align: center; padding: 30px 0; }
         .player.show { display: block; }
         .bomb-icon { font-size: 5em; animation: float 2s ease-in-out infinite; }
@@ -188,9 +264,7 @@
         .countdown { font-size: 2em; color: #ff6b6b; margin: 20px 0; }
         .visualizer { height: 80px; background: rgba(0,0,0,0.4); border-radius: 12px; margin: 20px 0; }
         
-        .destroy-btn {
-            background: linear-gradient(135deg, #ff4444, #ff0000);
-        }
+        .destroy-btn { background: linear-gradient(135deg, #ff4444, #ff0000); }
         
         .explosion {
             position: fixed;
@@ -228,77 +302,139 @@
         
         .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); }
         .footer p { font-size: 0.85em; color: #666; }
+        
+        .direct-link-section {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .direct-link-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.95em;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+        .direct-link-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(102,126,234,0.4);
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>💣 EARBOMB</h1>
-        <p class="subtitle">Selbstzerstörende Audionachrichten</p>
+        <h1>EARBOMB</h1>
+        <p class="subtitle">Self-Destructing Audio Messages</p>
         
         <div class="tabs">
-            <button class="tab active" data-tab="create">🎙️ Senden</button>
-            <button class="tab" data-tab="receive">📩 Empfangen</button>
+            <button class="tab active" data-tab="create">Record</button>
+            <button class="tab" data-tab="receive">Receive</button>
         </div>
         
         <div id="createSection" class="section active">
             <div class="record-area">
                 <button class="record-btn" id="recordBtn"></button>
                 <div class="timer" id="timer">00:00</div>
-                <p class="status" id="status">Klicke zum Aufnehmen</p>
+                <p class="status" id="status">Click to record</p>
             </div>
             
             <div class="options">
                 <div class="option-group">
-                    <label class="option-label"> Zerstörung nach:</label>
+                    <label class="option-label">Destroy after:</label>
                     <select id="destroyMode">
-                        <option value="play">Einfachem Anhören</option>
-                        <option value="time">Zeitablauf</option>
-                        <option value="both">Beidem</option>
+                        <option value="play">Playing</option>
+                        <option value="time">Time expires</option>
+                        <option value="both">Both</option>
                     </select>
                 </div>
                 <div class="option-group" id="timeGroup" style="display:none;">
-                    <label class="option-label">Gültig für:</label>
+                    <label class="option-label">Valid for:</label>
                     <select id="destroyTime">
-                        <option value="60">1 Minute</option>
-                        <option value="300">5 Minuten</option>
-                        <option value="3600" selected>1 Stunde</option>
-                        <option value="86400">24 Stunden</option>
+                        <option value="60">1 minute</option>
+                        <option value="300">5 minutes</option>
+                        <option value="3600" selected>1 hour</option>
+                        <option value="86400">24 hours</option>
                     </select>
+                </div>
+                <div class="option-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="usePassword">
+                        <label for="usePassword">Protect with password</label>
+                    </div>
+                </div>
+                <div class="option-group" id="passwordGroup" style="display:none;">
+                    <label class="option-label">Password:</label>
+                    <input type="password" id="passwordInput" placeholder="Enter password">
                 </div>
             </div>
             
-            <button class="btn btn-primary" id="sendBtn" disabled>🔗 Code Generieren</button>
+            <button class="btn btn-primary" id="sendBtn" disabled>Generate Code</button>
             
             <div class="result" id="result">
                 <div class="code-display" id="codeDisplay">------</div>
                 
                 <div class="link-display" id="linkDisplay"></div>
                 
+                <div class="password-display" id="passwordDisplay" style="display:none;">
+                    <strong>Password:</strong> <span id="passwordText"></span>
+                </div>
+                
                 <div class="qr-section">
-                    <div class="qr-canvas">
-                        <canvas id="qrCanvas" width="150" height="150"></canvas>
+                    <div class="qr-container">
+                        <canvas id="qrCanvas" width="200" height="200"></canvas>
                     </div>
                 </div>
                 
+                <div class="share-options" id="shareOptions" style="display:none;">
+                    <button class="share-btn native" id="nativeShareBtn" style="display:none;">
+                        <span>Share</span>
+                    </button>
+                    <button class="share-btn whatsapp" id="whatsappBtn">
+                        WhatsApp
+                    </button>
+                    <button class="share-btn telegram" id="telegramBtn">
+                        Telegram
+                    </button>
+                    <button class="share-btn clipboard" id="copyLinkBtn">
+                        Copy Link
+                    </button>
+                </div>
+                
+                <div class="direct-link-section">
+                    <button class="direct-link-btn" id="openLinkBtn">
+                        Open Listen Link
+                    </button>
+                </div>
+                
                 <div class="btn-group">
-                    <button class="btn btn-primary" id="copyBtn">📋 Kopieren</button>
-                    <button class="btn btn-primary" id="newBtn">➕ Neu</button>
+                    <button class="btn btn-primary" id="copyBtn">Copy All</button>
+                    <button class="btn btn-secondary" id="newBtn">New</button>
                 </div>
             </div>
         </div>
         
         <div id="receiveSection" class="section">
             <div class="input-group">
-                <input type="text" class="code-input" id="codeInput" placeholder="CODE EINGEBEN" maxlength="8" autocomplete="off">
+                <input type="text" class="code-input" id="codeInput" placeholder="ENTER CODE" maxlength="8" autocomplete="off">
             </div>
             
-            <button class="btn btn-primary" id="loadBtn">🔓 Abrufen</button>
+            <div class="input-group" id="receivePasswordGroup" style="display:none;">
+                <input type="password" id="receivePassword" placeholder="Enter password">
+            </div>
+            
+            <button class="btn btn-primary" id="loadBtn">Unlock</button>
             
             <div class="player" id="player">
-                <div class="bomb-icon">💣</div>
+                <div class="bomb-icon"></div>
                 <div class="countdown" id="countdown">0:00</div>
                 <canvas class="visualizer" id="visualizer"></canvas>
-                <button class="btn destroy-btn" id="destroyBtn">💥 JETZT ZERSTÖREN</button>
+                <button class="btn destroy-btn" id="destroyBtn">Destroy Now</button>
             </div>
         </div>
     </div>
@@ -308,7 +444,7 @@
 
     <script>
         let mediaRecorder, audioChunks = [], audioBlob = null, isRecording = false;
-        let timerInterval, seconds = 0, currentCode = null, audioElement = null;
+        let timerInterval, seconds = 0, currentCode = null, currentPassword = null, currentLink = null, audioElement = null;
         
         const recordBtn = document.getElementById('recordBtn');
         const timer = document.getElementById('timer');
@@ -319,6 +455,9 @@
         const linkDisplay = document.getElementById('linkDisplay');
         const destroyMode = document.getElementById('destroyMode');
         const timeGroup = document.getElementById('timeGroup');
+        const usePassword = document.getElementById('usePassword');
+        const passwordGroup = document.getElementById('passwordGroup');
+        const passwordInput = document.getElementById('passwordInput');
         
         document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', () => {
@@ -331,6 +470,10 @@
         
         destroyMode.addEventListener('change', () => {
             timeGroup.style.display = destroyMode.value !== 'play' ? 'block' : 'none';
+        });
+        
+        usePassword.addEventListener('change', () => {
+            passwordGroup.style.display = usePassword.checked ? 'block' : 'none';
         });
         
         recordBtn.addEventListener('click', () => isRecording ? stopRecording() : startRecording());
@@ -351,7 +494,7 @@
                 mediaRecorder.start();
                 isRecording = true;
                 recordBtn.classList.add('recording');
-                status.textContent = '● AUFNAHME';
+                status.textContent = 'RECORDING';
                 status.classList.add('recording');
                 
                 seconds = 0;
@@ -362,7 +505,7 @@
                     timer.textContent = `${m}:${s}`;
                 }, 1000);
             } catch (err) {
-                toast('Mikrofonzugriff verweigert', 'error');
+                toast('Microphone access denied', 'error');
             }
         }
         
@@ -370,7 +513,7 @@
             mediaRecorder.stop();
             isRecording = false;
             recordBtn.classList.remove('recording');
-            status.textContent = 'Aufnahme beendet';
+            status.textContent = 'Recording stopped';
             status.classList.remove('recording');
             clearInterval(timerInterval);
         }
@@ -379,90 +522,287 @@
             if (!audioBlob) return;
             
             sendBtn.disabled = true;
-            sendBtn.textContent = '⏳ Sende...';
+            sendBtn.textContent = 'Sending...';
             
             try {
                 const reader = new FileReader();
                 reader.onload = async () => {
                     const base64 = reader.result.split(',')[1];
                     
+                    const payload = {
+                        audio: base64,
+                        destroyMode: destroyMode.value,
+                        destroyTime: document.getElementById('destroyTime').value
+                    };
+                    
+                    if (usePassword.checked && passwordInput.value) {
+                        payload.password = passwordInput.value;
+                    }
+                    
                     const res = await fetch('/api/create', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            audio: base64,
-                            destroyMode: destroyMode.value,
-                            destroyTime: document.getElementById('destroyTime').value
-                        })
+                        body: JSON.stringify(payload)
                     });
                     
                     const data = await res.json();
                     
                     if (data.success) {
                         currentCode = data.code;
+                        currentPassword = usePassword.checked ? passwordInput.value : null;
+                        currentLink = data.link;
                         codeDisplay.textContent = data.code;
                         linkDisplay.textContent = data.link;
                         result.classList.add('show');
                         sendBtn.style.display = 'none';
-                        generateQR(data.link);
-                        toast('Link kopiert!', 'success');
-                        navigator.clipboard.writeText(`${data.code}\n${data.link}`);
+                        
+                        if (data.hasPassword) {
+                            document.getElementById('passwordDisplay').style.display = 'block';
+                            document.getElementById('passwordText').textContent = currentPassword;
+                        } else {
+                            document.getElementById('passwordDisplay').style.display = 'none';
+                        }
+                        
+                        generateQRCode(data.link);
+                        setupShareButtons(data.code, data.link, currentPassword);
+                        
+                        if (navigator.share) {
+                            document.getElementById('nativeShareBtn').style.display = 'flex';
+                        }
                     } else {
-                        toast(data.error || 'Fehler', 'error');
+                        toast(data.error || 'Error', 'error');
                     }
                 };
                 reader.readAsDataURL(audioBlob);
             } catch (err) {
-                toast('Verbindungsfehler', 'error');
+                toast('Connection error', 'error');
             }
             
             sendBtn.disabled = false;
-            sendBtn.textContent = '🔗 Code Generieren';
+            sendBtn.textContent = 'Generate Code';
         });
         
-        function generateQR(text) {
+        function generateQRCode(text) {
             const canvas = document.getElementById('qrCanvas');
             const ctx = canvas.getContext('2d');
-            const size = 150;
+            const size = 200;
             
-            ctx.fillStyle = '#fff';
+            ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, size, size);
             
-            const matrix = generateQRMatrix(text);
-            const cellSize = size / matrix.length;
+            const qr = generateQRMatrix(text, 4);
+            const moduleCount = qr.length;
+            const moduleSize = size / moduleCount;
             
-            ctx.fillStyle = '#000';
-            for (let y = 0; y < matrix.length; y++) {
-                for (let x = 0; x < matrix.length; x++) {
-                    if (matrix[y][x]) ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+            ctx.fillStyle = '#000000';
+            for (let row = 0; row < moduleCount; row++) {
+                for (let col = 0; col < moduleCount; col++) {
+                    if (qr[row][col]) {
+                        ctx.fillRect(col * moduleSize, row * moduleSize, moduleSize, moduleSize);
+                    }
                 }
             }
         }
         
-        function generateQRMatrix(text) {
-            const size = 25;
-            const matrix = Array(size).fill().map(() => Array(size).fill(false));
-            const hash = text.split('').reduce((a, b) => ((a << 5) - a + b.charCodeAt(0)) | 0, 0);
+        function generateQRMatrix(text, errorLevel) {
+            const data = textToBytes(text);
+            const version = getQRVersion(data.length + text.length);
+            const moduleCount = version * 4 + 17;
+            const matrix = Array(moduleCount).fill(null).map(() => Array(moduleCount).fill(null));
             
-            for (let i = 0; i < 7; i++) {
-                for (let j = 0; j < 7; j++) {
-                    if (i === 0 || i === 6 || j === 0 || j === 6 || (i >= 2 && i <= 4 && j >= 2 && j <= 4)) {
-                        matrix[i][j] = matrix[i + size - 7][j] = matrix[i][j + size - 7] = true;
+            addFinderPatterns(matrix, moduleCount);
+            addAlignmentPatterns(matrix, moduleCount, version);
+            addTimingPatterns(matrix, moduleCount);
+            addFormatInfo(matrix, moduleCount, errorLevel);
+            addVersionInfo(matrix, moduleCount, version);
+            addDarkModule(matrix, version);
+            
+            const mask = createMaskedData(matrix, data, moduleCount, version, errorLevel);
+            
+            for (let row = 0; row < moduleCount; row++) {
+                for (let col = 0; col < moduleCount; col++) {
+                    if (mask[row][col] === null) {
+                        mask[row][col] = false;
                     }
                 }
             }
             
-            for (let y = 7; y < size - 7; y++) {
-                for (let x = 7; x < size - 7; x++) {
-                    matrix[y][x] = ((hash >> ((x - 7) + (y - 7) * 3)) & 1) === 1;
+            return mask;
+        }
+        
+        function textToBytes(text) {
+            const bytes = [];
+            for (let i = 0; i < text.length; i++) {
+                bytes.push(text.charCodeAt(i));
+            }
+            return bytes;
+        }
+        
+        function getQRVersion(dataLength) {
+            const capacities = [17, 32, 53, 78, 106, 134, 154, 192, 230, 271, 321, 367, 425, 458, 520, 586, 644, 718, 792, 858];
+            for (let v = 0; v < capacities.length; v++) {
+                if (dataLength <= capacities[v]) return v + 1;
+            }
+            return 40;
+        }
+        
+        function addFinderPatterns(matrix, size) {
+            const positions = [[0, 0], [size - 7, 0], [0, size - 7]];
+            positions.forEach(([startRow, startCol]) => {
+                for (let r = 0; r < 7; r++) {
+                    for (let c = 0; c < 7; c++) {
+                        const isEdge = r === 0 || r === 6 || c === 0 || c === 6;
+                        const isInner = r >= 2 && r <= 4 && c >= 2 && c <= 4;
+                        matrix[startRow + r][startCol + c] = isEdge || isInner;
+                    }
+                }
+                for (let r = 1; r < 6; r++) {
+                    matrix[startRow + r][startCol + 7] = true;
+                    matrix[startRow + 7][startCol + r] = true;
+                }
+            });
+        }
+        
+        function addAlignmentPatterns(matrix, size, version) {
+            if (version < 2) return;
+            const positions = getAlignmentPositions(version, size);
+            positions.forEach(row => {
+                positions.forEach(col => {
+                    if (matrix[row][col] !== null) return;
+                    for (let r = -2; r <= 2; r++) {
+                        for (let c = -2; c <= 2; c++) {
+                            const isEdge = Math.abs(r) === 2 || Math.abs(c) === 2;
+                            const isCenter = r === 0 && c === 0;
+                            if (row + r >= 0 && row + r < size && col + c >= 0 && col + c < size) {
+                                matrix[row + r][col + c] = isEdge || isCenter;
+                            }
+                        }
+                    }
+                });
+            });
+        }
+        
+        function getAlignmentPositions(version, size) {
+            if (version === 1) return [];
+            const intervals = Math.floor(version / 7) + 1;
+            const step = Math.floor((size - 13) / intervals);
+            const positions = [6];
+            for (let i = 1; i <= intervals; i++) {
+                positions.push(size - 7 - (intervals - i) * step);
+            }
+            return positions;
+        }
+        
+        function addTimingPatterns(matrix, size) {
+            for (let i = 8; i < size - 8; i++) {
+                matrix[6][i] = i % 2 === 0;
+                matrix[i][6] = i % 2 === 0;
+            }
+        }
+        
+        function addFormatInfo(matrix, size, errorLevel) {
+            const formatBits = (errorLevel << 3) | 0;
+            const hash = textToBytes('EARBOMB').reduce((a, b) => a ^ b, formatBits);
+            
+            for (let i = 0; i < 15; i++) {
+                const bit = (hash >> i) & 1;
+                if (i < 6) matrix[i][8] = (bit ^ (i % 2)) === 1;
+                else if (i < 8) matrix[i + 1][8] = (bit ^ (i % 2)) === 1;
+                else matrix[8][14 - i] = (bit ^ (i % 2)) === 1;
+                
+                if (i < 8) matrix[8][size - 1 - i] = bit === 1;
+                else if (i < 9) matrix[8][5] = bit === 1;
+                else matrix[size - 15 + i][8] = bit === 1;
+            }
+            matrix[8][size - 8] = true;
+        }
+        
+        function addVersionInfo(matrix, size, version) {
+            if (version < 7) return;
+            const versionBits = version << 12;
+            for (let i = 0; i < 18; i++) {
+                const bit = (versionBits >> i) & 1;
+                const row = Math.floor(i / 3);
+                const col = i % 3;
+                matrix[row][size - 11 + col] = bit === 1;
+                matrix[size - 11 + col][row] = bit === 1;
+            }
+        }
+        
+        function addDarkModule(matrix, version) {
+            matrix[version * 4 + 9][8] = true;
+        }
+        
+        function createMaskedData(matrix, data, size, version, errorLevel) {
+            const dataArea = [];
+            const reserved = Array(size).fill(null).map(() => Array(size).fill(false));
+            
+            for (let r = 0; r < size; r++) {
+                for (let c = 0; c < size; c++) {
+                    if (matrix[r][c] !== null) reserved[r][c] = true;
                 }
             }
+            
+            let dataIndex = 0;
+            for (let col = size - 1; col > 0; col -= 2) {
+                if (col === 6) col = 5;
+                for (let row = 0; row < size; row++) {
+                    for (let c = 0; c < 2; c++) {
+                        const actualCol = col - c;
+                        if (!reserved[row][actualCol] && dataIndex < data.length * 8) {
+                            const byteIndex = Math.floor(dataIndex / 8);
+                            const bitIndex = 7 - (dataIndex % 8);
+                            const bit = (data[byteIndex % data.length] >> bitIndex) & 1;
+                            matrix[row][actualCol] = bit === 1;
+                            dataIndex++;
+                        }
+                    }
+                }
+            }
+            
             return matrix;
         }
         
+        function setupShareButtons(code, link, password) {
+            const shareText = password 
+                ? `Listen to this EARBOMB message!\n\nCode: ${code}\nLink: ${link}\nPassword: ${password}`
+                : `Listen to this EARBOMB message!\n\nCode: ${code}\nLink: ${link}`;
+            
+            document.getElementById('nativeShareBtn').onclick = async () => {
+                try {
+                    await navigator.share({
+                        title: 'EARBOMB Message',
+                        text: shareText,
+                        url: link
+                    });
+                } catch (err) {
+                    if (err.name !== 'AbortError') toast('Share failed', 'error');
+                }
+            };
+            
+            document.getElementById('whatsappBtn').onclick = () => {
+                window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank');
+            };
+            
+            document.getElementById('telegramBtn').onclick = () => {
+                window.open(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent('EARBOMB Message: ' + code)}`, '_blank');
+            };
+            
+            document.getElementById('copyLinkBtn').onclick = () => {
+                navigator.clipboard.writeText(link);
+                toast('Link copied!', 'success');
+            };
+            
+            document.getElementById('openLinkBtn').onclick = () => {
+                window.open(link, '_blank');
+            };
+        }
+        
         document.getElementById('copyBtn').addEventListener('click', () => {
-            navigator.clipboard.writeText(`${currentCode}\n${linkDisplay.textContent}`);
-            toast('Kopiert!', 'success');
+            let text = `Code: ${currentCode}\nLink: ${currentLink}`;
+            if (currentPassword) text += `\nPassword: ${currentPassword}`;
+            navigator.clipboard.writeText(text);
+            toast('Copied!', 'success');
         });
         
         document.getElementById('newBtn').addEventListener('click', () => {
@@ -471,48 +811,83 @@
             sendBtn.disabled = true;
             audioBlob = null;
             timer.textContent = '00:00';
-            status.textContent = 'Klicke zum Aufnehmen';
+            status.textContent = 'Click to record';
+            usePassword.checked = false;
+            passwordGroup.style.display = 'none';
+            passwordInput.value = '';
+            currentCode = null;
+            currentPassword = null;
+            currentLink = null;
         });
         
-        // RECEIVE
         const codeInput = document.getElementById('codeInput');
         const loadBtn = document.getElementById('loadBtn');
         const player = document.getElementById('player');
+        const receivePasswordGroup = document.getElementById('receivePasswordGroup');
+        const receivePassword = document.getElementById('receivePassword');
         
         codeInput.addEventListener('input', (e) => {
             e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
         });
+        
+        let needsPassword = false;
         
         loadBtn.addEventListener('click', async () => {
             const code = codeInput.value.trim().toUpperCase();
             if (!code) return;
             
             loadBtn.disabled = true;
-            loadBtn.textContent = '⏳ Lädt...';
+            loadBtn.textContent = 'Loading...';
             
             try {
                 const res = await fetch(`/${code}`);
                 const data = await res.json();
                 
                 if (data.exists) {
-                    const playRes = await fetch(`/${code}/play`, { method: 'POST' });
+                    needsPassword = data.needsPassword;
+                    
+                    if (needsPassword) {
+                        receivePasswordGroup.style.display = 'block';
+                        if (!receivePassword.value) {
+                            receivePassword.focus();
+                            loadBtn.disabled = false;
+                            loadBtn.textContent = 'Unlock';
+                            return;
+                        }
+                    }
+                    
+                    const playRes = await fetch(`/${code}/play`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ password: receivePassword.value || '' })
+                    });
                     const playData = await playRes.json();
                     
+                    if (playRes.status === 401) {
+                        toast('Invalid password', 'error');
+                        loadBtn.disabled = false;
+                        loadBtn.textContent = 'Unlock';
+                        return;
+                    }
+                    
                     if (playData.success) {
-                        currentCode = code;
                         startPlayer(playData.audio, data);
                     } else {
-                        toast('Audio abgelaufen', 'error');
+                        toast('Message expired or not found', 'error');
                     }
                 } else {
-                    toast('Nicht gefunden', 'error');
+                    toast('Not found', 'error');
                 }
             } catch (err) {
-                toast('Fehler', 'error');
+                toast('Error', 'error');
             }
             
             loadBtn.disabled = false;
-            loadBtn.textContent = '🔓 Abrufen';
+            loadBtn.textContent = 'Unlock';
+        });
+        
+        receivePassword.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') loadBtn.click();
         });
         
         function startPlayer(base64Audio, info) {
@@ -599,7 +974,7 @@
             setTimeout(() => {
                 document.getElementById('explosion').style.display = 'none';
                 player.classList.remove('show');
-                toast('🔒 Audio zerstört!', 'success');
+                toast('Audio destroyed!', 'success');
             }, 1500);
         }
         
