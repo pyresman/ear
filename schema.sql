@@ -5,7 +5,9 @@ CREATE TABLE IF NOT EXISTS messages (
     destroy_mode TEXT NOT NULL DEFAULT 'play',
     expires_at INTEGER NOT NULL,
     created_at INTEGER NOT NULL,
-    accessed INTEGER DEFAULT 0
+    accessed INTEGER DEFAULT 0,
+    password_hash TEXT,
+    needs_password INTEGER DEFAULT 0
 );
 
 CREATE INDEX IF NOT EXISTS idx_expires ON messages(expires_at);

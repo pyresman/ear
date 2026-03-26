@@ -1,16 +1,14 @@
 import { Hono } from 'hono';
-import { cors } from 'hono/cors';
-import { basicAuth } from 'hono/basic-auth';
-import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 
 const app = new Hono();
 
-app.use('*', cors({
-  origin: '*',
-  allowMethods: ['GET', 'POST', 'OPTIONS'],
-  allowHeaders: ['Content-Type'],
-  maxAge: 86400,
-}));
+app.use('*', async (c, next) => {
+  c.res.headers.set('Access-Control-Allow-Origin', '*');
+  c.res.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  c.res.headers.set('Access-Control-Allow-Headers', 'Content-Type');
+  if (c.req.method === 'OPTIONS') return c.text('', 204);
+  await next();
+});
 
 function generateCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -20,6 +18,13 @@ function generateCode() {
     code += chars[random[i] % chars.length];
   }
   return code;
+}
+
+async function hashPassword(password) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 async function hashKey(input) {
@@ -69,20 +74,12 @@ async function decrypt(encryptedData, ivStr, key) {
   return new TextDecoder().decode(decrypted);
 }
 
-app.get('/', async (c) => {
-  const code = c.req.param('code');
-  if (!code || code.length !== 6) {
-    return c.html(await getAsset('index.html'));
-  }
-  return c.redirect('/#' + code.toUpperCase());
-});
-
 app.post('/api/create', async (c) => {
   try {
-    const { audio, destroyMode, destroyTime } = await c.req.json();
+    const { audio, destroyMode, destroyTime, password } = await c.req.json();
     
     if (!audio) {
-      return c.json({ error: 'Kein Audio' }, 400);
+      return c.json({ error: 'No audio provided' }, 400);
     }
     
     const code = generateCode();
@@ -93,22 +90,29 @@ app.post('/api/create', async (c) => {
     const expiresIn = parseInt(destroyTime) || 3600;
     const expiresAt = Math.floor(now + expiresIn);
     
-    await c.env.DB.prepare(`
-      INSERT INTO messages (code, encrypted_data, iv, destroy_mode, expires_at, created_at)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).bind(code, encrypted.data, encrypted.iv, destroyMode || 'play', expiresAt, Math.floor(now)).run();
+    let hashedPassword = null;
+    if (password) {
+      hashedPassword = await hashPassword(password);
+    }
     
-    const baseUrl = c.req.url.match(/https?:\/\/[^/]+/)?.[0] || 'https://earbomb.pages.dev';
+    await c.env.DB.prepare(`
+      INSERT INTO messages (code, encrypted_data, iv, destroy_mode, expires_at, created_at, password_hash, needs_password)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(code, encrypted.data, encrypted.iv, destroyMode || 'play', expiresAt, Math.floor(now), hashedPassword, password ? 1 : 0).run();
+    
+    const url = new URL(c.req.url);
+    const baseUrl = `${url.protocol}//${url.host}`;
     
     return c.json({
       success: true,
       code,
       link: `${baseUrl}/${code}`,
-      expiresAt: expiresAt * 1000
+      expiresAt: expiresAt * 1000,
+      hasPassword: !!password
     });
   } catch (err) {
     console.error(err);
-    return c.json({ error: 'Fehler' }, 500);
+    return c.json({ error: 'Server error' }, 500);
   }
 });
 
@@ -136,6 +140,7 @@ app.get('/:code{[A-Z0-9]{6}}', async (c) => {
   return c.json({
     exists: true,
     destroyMode: msg.destroy_mode,
+    needsPassword: !!msg.needs_password,
     remaining: Math.max(0, msg.expires_at - now),
     expiresAt: msg.expires_at * 1000
   });
@@ -143,24 +148,33 @@ app.get('/:code{[A-Z0-9]{6}}', async (c) => {
 
 app.post('/:code{[A-Z0-9]{6}}/play', async (c) => {
   const code = c.req.param('code').toUpperCase();
+  const { password } = await c.req.json();
   
   const msg = await c.env.DB.prepare(
     'SELECT * FROM messages WHERE code = ?'
   ).bind(code).first();
   
   if (!msg) {
-    return c.json({ error: 'Nicht gefunden' }, 404);
+    return c.json({ error: 'Message not found' }, 404);
   }
   
   const now = Math.floor(Date.now() / 1000);
   
   if (now > msg.expires_at) {
     await c.env.DB.prepare('DELETE FROM messages WHERE code = ?').bind(code).run();
-    return c.json({ error: 'Abgelaufen' }, 410);
+    return c.json({ error: 'Message expired' }, 410);
   }
   
-  if (msg.accessed && msg.destroy_mode !== 'time') {
-    return c.json({ error: 'Bereits abgespielt' }, 410);
+  if (msg.accessed && msg.destroy_mode === 'play') {
+    await c.env.DB.prepare('DELETE FROM messages WHERE code = ?').bind(code).run();
+    return c.json({ error: 'Already played' }, 410);
+  }
+  
+  if (msg.needs_password && msg.password_hash) {
+    const inputHash = await hashPassword(password || '');
+    if (inputHash !== msg.password_hash) {
+      return c.json({ error: 'Invalid password' }, 401);
+    }
   }
   
   const encryptionKey = await hashKey(code);
@@ -169,7 +183,7 @@ app.post('/:code{[A-Z0-9]{6}}/play', async (c) => {
   try {
     decrypted = await decrypt(msg.encrypted_data, msg.iv, encryptionKey);
   } catch (e) {
-    return c.json({ error: 'Dekodierfehler' }, 500);
+    return c.json({ error: 'Decryption error' }, 500);
   }
   
   if (msg.destroy_mode === 'play' || msg.destroy_mode === 'both') {
@@ -182,17 +196,8 @@ app.post('/:code{[A-Z0-9]{6}}/play', async (c) => {
 });
 
 app.notFound(async (c) => {
-  return c.html(await getAsset('index.html'));
+  const url = new URL(c.req.url);
+  return c.redirect('/#' + (url.pathname.slice(1) || ''));
 });
-
-async function getAsset(name) {
-  try {
-    const asset = await fetch(`https://workers.cloudflare.com/${name}`);
-    if (asset.ok) {
-      return asset.text();
-    }
-  } catch {}
-  return `<!DOCTYPE html><html><body><h1>EARBOMB</h1><p>Visit the main page to use the service.</p></body></html>`;
-}
 
 export default app;

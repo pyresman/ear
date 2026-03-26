@@ -8,8 +8,4 @@ bucket = "./public"
 [[d1_databases]]
 binding = "DB"
 database_name = "earbomb-db"
-database_id = "YOUR_DATABASE_ID"
-
-[[kv_namespaces]]
-binding = "AUDIO"
-id = "YOUR_KV_ID"
+database_id = "dcf8266d-9177-4d52-b77d-05d9c3457d0d"
