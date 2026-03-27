@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
+    "build": "node scripts/build-config.js",
     "db:create": "wrangler d1 create earbomb-db",
     "db:init": "wrangler d1 execute earbomb-db --local --file=./schema.sql",
     "db:init:remote": "wrangler d1 execute earbomb-db --remote --file=./schema.sql"
