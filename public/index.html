@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EARBOMB - Self-Destructing Audio Messages</title>
+    <script src="/config.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -446,6 +447,11 @@
         let mediaRecorder, audioChunks = [], audioBlob = null, isRecording = false;
         let timerInterval, seconds = 0, currentCode = null, currentPassword = null, currentLink = null, audioElement = null;
         
+        function apiUrl(path) {
+            const base = window.API_BASE_URL || 'https://api.earbomb.org';
+            return base + path;
+        }
+        
         const recordBtn = document.getElementById('recordBtn');
         const timer = document.getElementById('timer');
         const status = document.getElementById('status');
@@ -539,7 +545,7 @@
                         payload.password = passwordInput.value;
                     }
                     
-                    const res = await fetch('/api/create', {
+                    const res = await fetch(apiUrl('/api/create'), {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
@@ -840,7 +846,7 @@
             loadBtn.textContent = 'Loading...';
             
             try {
-                const res = await fetch(`/${code}`);
+                const res = await fetch(apiUrl(`/${code}`));
                 const data = await res.json();
                 
                 if (data.exists) {
@@ -856,7 +862,7 @@
                         }
                     }
                     
-                    const playRes = await fetch(`/${code}/play`, {
+                    const playRes = await fetch(apiUrl(`/${code}/play`), {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ password: receivePassword.value || '' })

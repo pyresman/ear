@@ -9,3 +9,11 @@ bucket = "./public"
 binding = "DB"
 database_name = "earbomb-db"
 database_id = "dcf8266d-9177-4d52-b77d-05d9c3457d0d"
+
+[[routes]]
+pattern = "earbomb.org"
+zone_name = "earbomb.org"
+
+[[routes]]
+pattern = "www.earbomb.org"
+zone_name = "earbomb.org"
