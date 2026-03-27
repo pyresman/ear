@@ -120,7 +120,65 @@ Passe diesen Wert entsprechend deiner Setup an.
 2. Teste die Audio-Aufnahme und Code-Generierung
 3. Teste das Abspielen eines Codes
 
-## Step 6: Banner Configuration and Admin Panel
+## Step 6: Current Deployment Status
+
+### Live URLs:
+- **GitHub Repository**: https://github.com/pyresman/ear
+- **Netlify Frontend**: https://earbomb.netlify.app
+- **Vercel Frontend**: https://earbomb.vercel.app
+- **Cloudflare Worker API**: https://api.earbomb.org
+- **Admin Panel**: https://earbomb.netlify.app/admin.html (password: `A123`)
+
+### Deployment Verification:
+1. ✅ **GitHub**: Code is up to date with all features (banners, sharing, QR codes)
+2. ✅ **Netlify**: Auto-deploys from GitHub, frontend is live
+3. ✅ **Vercel**: Static deployment configured, frontend is live
+4. ✅ **Cloudflare Worker**: API is live and responding
+5. ⚠️ **DNS Configuration**: Needs manual setup (see Step 7)
+
+## Step 7: DNS Configuration (earbomb.org)
+
+### Current DNS Setup:
+- `api.earbomb.org` → Cloudflare Worker (already configured via wrangler.toml route)
+- `earbomb.org` → Currently points to Cloudflare (needs to point to Netlify or Vercel)
+
+### Option A: Netlify as Primary Domain (Recommended)
+1. Go to Netlify Dashboard: https://app.netlify.com/
+2. Select your site "earbomb"
+3. Go to **Site Settings** → **Domain Management** → **Add custom domain**
+4. Add `earbomb.org` and `www.earbomb.org`
+5. Netlify will provide DNS records to configure at your domain registrar
+6. Update DNS at your registrar to point to Netlify's nameservers or add A/CNAME records:
+   ```
+   earbomb.org → Netlify load balancer IPs
+   www.earbomb.org → earbomb.netlify.app (CNAME)
+   api.earbomb.org → [Keep existing Cloudflare Worker route]
+   ```
+
+### Option B: Vercel as Primary Domain
+1. Go to Vercel Dashboard: https://vercel.com/dashboard
+2. Select your project "earbomb"
+3. Go to **Settings** → **Domains**
+4. Add `earbomb.org` and `www.earbomb.org`
+5. Configure DNS records at your registrar as instructed by Vercel
+
+### Option C: Cloudflare as DNS Provider (Keep domain on Cloudflare)
+If your domain is already using Cloudflare DNS:
+1. Go to Cloudflare Dashboard: https://dash.cloudflare.com/
+2. Select your domain
+3. Go to **DNS** → **Records**
+4. Update existing records:
+   - **A record** for `earbomb.org` → Netlify IPs (or Vercel IPs)
+   - **CNAME record** for `www` → earbomb.netlify.app (or earbomb.vercel.app)
+   - **CNAME record** for `api` → [Keep pointing to Cloudflare Worker]
+
+### Testing DNS Configuration:
+After DNS changes propagate (can take up to 48 hours):
+1. Test frontend: https://earbomb.org
+2. Test API: https://api.earbomb.org/api/config
+3. Test admin panel: https://earbomb.org/admin.html
+
+## Step 8: Banner Configuration and Admin Panel
 
 ### Banner System
 EARBOMB now includes a configurable banner advertising system with the following features:
