@@ -237,6 +237,13 @@
         .share-btn.sms { background: #34a853; color: #fff; }
         .share-btn.clipboard { background: rgba(255,255,255,0.1); color: #fff; }
         .share-btn.native { background: linear-gradient(135deg, #ff6b6b, #ffa500); color: #fff; }
+        .share-btn.session { background: #1c1c1e; color: #fff; }
+        .share-btn.threema { background: #2d9cdb; color: #fff; }
+        .share-btn.wire { background: #00aaff; color: #fff; }
+        .share-btn.messenger { background: #0084ff; color: #fff; }
+        .share-btn.twitter { background: #1da1f2; color: #fff; }
+        .share-btn.skype { background: #00aff0; color: #fff; }
+        .share-btn.qrdownload { background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; }
         .share-btn:hover { transform: translateY(-2px); opacity: 0.9; }
         
         .btn-group { display: flex; gap: 10px; }
@@ -488,6 +495,27 @@
                     <button class="share-btn clipboard" id="copyLinkBtn">
                         Copy Link
                     </button>
+                    <button class="share-btn session" id="sessionBtn">
+                        Session
+                    </button>
+                    <button class="share-btn threema" id="threemaBtn">
+                        Threema
+                    </button>
+                    <button class="share-btn wire" id="wireBtn">
+                        Wire
+                    </button>
+                    <button class="share-btn messenger" id="messengerBtn">
+                        Messenger
+                    </button>
+                    <button class="share-btn twitter" id="twitterBtn">
+                        Twitter
+                    </button>
+                    <button class="share-btn skype" id="skypeBtn">
+                        Skype
+                    </button>
+                    <button class="share-btn qrdownload" id="qrDownloadBtn">
+                        Download QR
+                    </button>
                 </div>
                 
                 <div class="direct-link-section">
@@ -533,6 +561,15 @@
         function apiUrl(path) {
             const base = window.API_BASE_URL || 'https://api.earbomb.org';
             return base + path;
+        }
+        
+        function getShareableLink(code, useHash = false) {
+            const base = window.location.origin || 'https://earbomb.org';
+            if (useHash) {
+                return `${base}/#${code}`;
+            } else {
+                return `${base}/?code=${code}`;
+            }
         }
         
         const recordBtn = document.getElementById('recordBtn');
@@ -639,9 +676,10 @@
                     if (data.success) {
                         currentCode = data.code;
                         currentPassword = usePassword.checked ? passwordInput.value : null;
-                        currentLink = data.link;
+                        // Use shareable frontend link instead of API link
+                        currentLink = getShareableLink(data.code);
                         codeDisplay.textContent = data.code;
-                        linkDisplay.textContent = data.link;
+                        linkDisplay.textContent = currentLink;
                         result.classList.add('show');
                         sendBtn.style.display = 'none';
                         
@@ -652,8 +690,8 @@
                             document.getElementById('passwordDisplay').style.display = 'none';
                         }
                         
-                        generateQRCode(data.link);
-                        setupShareButtons(data.code, data.link, currentPassword);
+                        generateQRCode(currentLink);
+                        setupShareButtons(data.code, currentLink, currentPassword);
                         
                         if (navigator.share) {
                             document.getElementById('nativeShareBtn').style.display = 'flex';
@@ -676,21 +714,103 @@
             const ctx = canvas.getContext('2d');
             const size = 200;
             
+            // Clear canvas
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, size, size);
             
+            // Generate QR matrix
             const qr = generateQRMatrix(text, 4);
             const moduleCount = qr.length;
             const moduleSize = size / moduleCount;
             
-            ctx.fillStyle = '#000000';
+            // Draw QR code with gradient
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#ff6b6b');
+            gradient.addColorStop(0.5, '#ffa500');
+            gradient.addColorStop(1, '#667eea');
+            ctx.fillStyle = gradient;
+            
             for (let row = 0; row < moduleCount; row++) {
                 for (let col = 0; col < moduleCount; col++) {
                     if (qr[row][col]) {
-                        ctx.fillRect(col * moduleSize, row * moduleSize, moduleSize, moduleSize);
+                        // Add rounded corners to modules
+                        const x = col * moduleSize;
+                        const y = row * moduleSize;
+                        const radius = moduleSize * 0.2;
+                        ctx.beginPath();
+                        ctx.moveTo(x + radius, y);
+                        ctx.lineTo(x + moduleSize - radius, y);
+                        ctx.quadraticCurveTo(x + moduleSize, y, x + moduleSize, y + radius);
+                        ctx.lineTo(x + moduleSize, y + moduleSize - radius);
+                        ctx.quadraticCurveTo(x + moduleSize, y + moduleSize, x + moduleSize - radius, y + moduleSize);
+                        ctx.lineTo(x + radius, y + moduleSize);
+                        ctx.quadraticCurveTo(x, y + moduleSize, x, y + moduleSize - radius);
+                        ctx.lineTo(x, y + radius);
+                        ctx.quadraticCurveTo(x, y, x + radius, y);
+                        ctx.closePath();
+                        ctx.fill();
                     }
                 }
             }
+            
+            // Add EARBOMB logo in center
+            const centerSize = moduleSize * 7;
+            const centerX = size / 2 - centerSize / 2;
+            const centerY = size / 2 - centerSize / 2;
+            
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(centerX, centerY, centerSize, centerSize);
+            
+            ctx.fillStyle = '#ff6b6b';
+            ctx.font = `${moduleSize * 3}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('EB', size / 2, size / 2);
+        }
+        
+        function downloadQRCode(text) {
+            const canvas = document.getElementById('qrCanvas');
+            if (!canvas) return;
+            
+            // Create a temporary canvas for higher resolution
+            const scale = 4;
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = canvas.width * scale;
+            tempCanvas.height = canvas.height * scale;
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            // Fill background
+            tempCtx.fillStyle = '#ffffff';
+            tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+            
+            // Draw QR code scaled up
+            const qr = generateQRMatrix(text, 4);
+            const moduleCount = qr.length;
+            const moduleSize = tempCanvas.width / moduleCount;
+            
+            tempCtx.fillStyle = '#000000';
+            for (let row = 0; row < moduleCount; row++) {
+                for (let col = 0; col < moduleCount; col++) {
+                    if (qr[row][col]) {
+                        tempCtx.fillRect(col * moduleSize, row * moduleSize, moduleSize, moduleSize);
+                    }
+                }
+            }
+            
+            // Add EARBOMB logo/text in center
+            tempCtx.fillStyle = '#ff6b6b';
+            tempCtx.font = `${moduleSize * 6}px Arial`;
+            tempCtx.textAlign = 'center';
+            tempCtx.textBaseline = 'middle';
+            tempCtx.fillText('EARBOMB', tempCanvas.width / 2, tempCanvas.height / 2);
+            
+            // Create download link
+            const link = document.createElement('a');
+            link.download = `earbomb-${text.split('/').pop() || 'code'}.png`;
+            link.href = tempCanvas.toDataURL('image/png');
+            link.click();
+            
+            toast('QR code downloaded!', 'success');
         }
         
         function generateQRMatrix(text, errorLevel) {
@@ -896,6 +1016,34 @@
             
             document.getElementById('openLinkBtn').onclick = () => {
                 window.open(link, '_blank');
+            };
+            
+            document.getElementById('sessionBtn').onclick = () => {
+                window.open(`https://getsession.org/?text=${encodeURIComponent(shareText)}`, '_blank');
+            };
+            
+            document.getElementById('threemaBtn').onclick = () => {
+                window.open(`threema://compose?text=${encodeURIComponent(shareText)}`, '_blank');
+            };
+            
+            document.getElementById('wireBtn').onclick = () => {
+                window.open(`wire://message?text=${encodeURIComponent(shareText)}`, '_blank');
+            };
+            
+            document.getElementById('messengerBtn').onclick = () => {
+                window.open(`fb-messenger://share?link=${encodeURIComponent(link)}`, '_blank');
+            };
+            
+            document.getElementById('twitterBtn').onclick = () => {
+                window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(link)}`, '_blank');
+            };
+            
+            document.getElementById('skypeBtn').onclick = () => {
+                window.open(`skype:?chat&topic=${encodeURIComponent('EARBOMB Message')}&body=${encodeURIComponent(shareText)}`, '_blank');
+            };
+            
+            document.getElementById('qrDownloadBtn').onclick = () => {
+                downloadQRCode(link);
             };
         }
         
@@ -1202,16 +1350,41 @@
         }
         
         function checkUrl() {
+            // Check hash (e.g., https://earbomb.org/#ABCDEF)
             const hash = window.location.hash.slice(1);
             if (hash && hash.length >= 6) {
                 document.querySelector('[data-tab="receive"]').click();
                 codeInput.value = hash.toUpperCase();
                 setTimeout(() => loadBtn.click(), 300);
                 history.replaceState(null, '', window.location.pathname);
+                return;
+            }
+            
+            // Check query parameter (e.g., https://earbomb.org/?code=ABCDEF)
+            const urlParams = new URLSearchParams(window.location.search);
+            const codeParam = urlParams.get('code');
+            if (codeParam && codeParam.length >= 6) {
+                document.querySelector('[data-tab="receive"]').click();
+                codeInput.value = codeParam.toUpperCase();
+                setTimeout(() => loadBtn.click(), 300);
+                // Remove query parameter from URL without reload
+                const newUrl = window.location.pathname + window.location.hash;
+                history.replaceState(null, '', newUrl);
+                return;
+            }
+            
+            // Check path (e.g., https://earbomb.org/ABCDEF) - for future server-side routing
+            const path = window.location.pathname.slice(1);
+            if (path && /^[A-Z0-9]{6,}$/i.test(path)) {
+                document.querySelector('[data-tab="receive"]').click();
+                codeInput.value = path.toUpperCase();
+                setTimeout(() => loadBtn.click(), 300);
+                history.replaceState(null, '', window.location.pathname);
             }
         }
         
         window.addEventListener('hashchange', checkUrl);
+        window.addEventListener('popstate', checkUrl);
         checkUrl();
         
         // Load banners on page load
