@@ -232,7 +232,9 @@
         }
         .share-btn.whatsapp { background: #25D366; color: #fff; }
         .share-btn.telegram { background: #0088cc; color: #fff; }
-        .share-btn.twitter { background: #1DA1F2; color: #fff; }
+        .share-btn.signal { background: #3a76f0; color: #fff; }
+        .share-btn.email { background: #ea4335; color: #fff; }
+        .share-btn.sms { background: #34a853; color: #fff; }
         .share-btn.clipboard { background: rgba(255,255,255,0.1); color: #fff; }
         .share-btn.native { background: linear-gradient(135deg, #ff6b6b, #ffa500); color: #fff; }
         .share-btn:hover { transform: translateY(-2px); opacity: 0.9; }
@@ -401,6 +403,15 @@
                     </button>
                     <button class="share-btn telegram" id="telegramBtn">
                         Telegram
+                    </button>
+                    <button class="share-btn signal" id="signalBtn">
+                        Signal
+                    </button>
+                    <button class="share-btn email" id="emailBtn">
+                        Email
+                    </button>
+                    <button class="share-btn sms" id="smsBtn">
+                        SMS
                     </button>
                     <button class="share-btn clipboard" id="copyLinkBtn">
                         Copy Link
@@ -792,6 +803,18 @@
             
             document.getElementById('telegramBtn').onclick = () => {
                 window.open(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent('EARBOMB Message: ' + code)}`, '_blank');
+            };
+            
+            document.getElementById('signalBtn').onclick = () => {
+                window.open(`signal://send?text=${encodeURIComponent(shareText)}`, '_blank');
+            };
+            
+            document.getElementById('emailBtn').onclick = () => {
+                window.open(`mailto:?subject=EARBOMB Message&body=${encodeURIComponent(shareText)}`, '_blank');
+            };
+            
+            document.getElementById('smsBtn').onclick = () => {
+                window.open(`sms:?body=${encodeURIComponent(shareText)}`, '_blank');
             };
             
             document.getElementById('copyLinkBtn').onclick = () => {
