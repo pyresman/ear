@@ -12,8 +12,25 @@ let CONFIG = {
   disclaimerText: 'By using this service, you agree that audio messages are automatically deleted after being played or after the time expires. We do not store messages permanently.',
   tickerText: 'Welcome to EARBOMB - Self-destructing audio messages that disappear forever!',
   tickerEnabled: true,
-  adTopEnabled: true,
-  adBottomEnabled: true
+  
+  // Banner configuration
+  bannerMode: 'none', // 'none', 'single', 'double', 'triple'
+  bannerType: 'large', // 'large', 'medium', 'small'
+  bannerPosition: 'top', // 'top', 'bottom', 'both'
+  
+  // Banner content
+  bannerHtml1: '<div class="ad-banner ad-large"><a href="#" target="_blank" rel="noopener"><img src="https://via.placeholder.com/728x90/ff6b6b/ffffff?text=Advertisement+1" alt="Ad 1"></a></div>',
+  bannerHtml2: '<div class="ad-banner ad-medium"><a href="#" target="_blank" rel="noopener"><img src="https://via.placeholder.com/468x60/ffa500/ffffff?text=Advertisement+2" alt="Ad 2"></a></div>',
+  bannerHtml3: '<div class="ad-banner ad-small"><a href="#" target="_blank" rel="noopener"><img src="https://via.placeholder.com/320x100/667eea/ffffff?text=Advertisement+3" alt="Ad 3"></a></div>',
+  
+  // Banner colors
+  bannerBgColor: 'rgba(255,255,255,0.02)',
+  bannerBorderColor: 'rgba(255,255,255,0.1)',
+  bannerTextColor: '#888',
+  
+  // Old compatibility
+  adTopEnabled: false,
+  adBottomEnabled: false
 };
 
 let ADMIN_PASSWORD = 'A123';

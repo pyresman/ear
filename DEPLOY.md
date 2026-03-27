@@ -120,6 +120,64 @@ Passe diesen Wert entsprechend deiner Setup an.
 2. Teste die Audio-Aufnahme und Code-Generierung
 3. Teste das Abspielen eines Codes
 
+## Step 6: Banner Configuration and Admin Panel
+
+### Banner System
+EARBOMB now includes a configurable banner advertising system with the following features:
+
+1. **Banner Modes**:
+   - `none`: No banners displayed
+   - `single`: One banner (uses Banner 1 HTML)
+   - `double`: Two banners (uses Banner 1 and 2 HTML)
+   - `triple`: Three banners (uses all three HTML slots)
+
+2. **Banner Types**:
+   - `large`: 728x90 pixels
+   - `medium`: 468x60 pixels  
+   - `small`: 320x100 pixels
+
+3. **Banner Positions**:
+   - `top`: Banners appear at top of page
+   - `bottom`: Banners appear at bottom of page
+   - `both`: Banners distributed between top and bottom
+
+### Admin Panel Access
+Access the admin panel at: `https://earbomb.org/admin.html`
+
+**Default Admin Password**: `A123`
+
+**Admin Panel Features**:
+1. Configure banner settings (mode, type, position)
+2. Edit banner HTML content (supports any HTML including images, links, ads)
+3. Customize banner colors (background, border, text)
+4. View and delete recent messages
+5. Change admin password
+
+### Banner Configuration via Admin Panel
+1. Log in with the admin password
+2. Navigate to the "Configuration" tab
+3. Adjust banner settings:
+   - Select banner mode (single/double/triple)
+   - Choose banner size (large/medium/small)
+   - Set banner position (top/bottom/both)
+4. Enter HTML content for each banner slot
+   - Banner 1: Primary banner (used in single mode)
+   - Banner 2: Secondary banner (used in double/triple mode)
+   - Banner 3: Tertiary banner (used in triple mode)
+5. Customize colors using CSS values (hex, rgba, etc.)
+6. Click "Save Configuration" to apply changes
+
+### Testing Banner Configuration
+1. After saving configuration, open the main site (`https://earbomb.org`)
+2. Banners should appear according to your settings
+3. Use "Test Configuration" button in admin panel to open main site in new tab
+
+### Security Notes
+- Change the default admin password immediately
+- Admin panel is protected by password authentication
+- Admin sessions use tokens stored in localStorage (cleared on logout)
+- API endpoints require valid admin tokens
+
 ## Troubleshooting
 
 ### CORS-Fehler
@@ -132,6 +190,17 @@ Stelle sicher, dass der Cloudflare Worker CORS-Header sendet. Der Code enthält 
 ### Audio-Probleme
 - Moderne Browser benötigen HTTPS für Audio-Aufnahme
 - Stelle sicher, dass beide Domains (Frontend und API) HTTPS verwenden
+
+### Banner nicht sichtbar
+1. Prüfe ob `bannerMode` nicht auf "none" gesetzt ist
+2. Stelle sicher, dass Banner-HTML korrekt ist
+3. Überprüfe die Browser-Konsole auf Fehler (F12 → Console)
+4. Teste die API-Endpoint direkt: `https://api.earbomb.org/api/config`
+
+### Admin Panel Login fehlgeschlagen
+1. Prüfe ob die Worker-API erreichbar ist
+2. Stelle sicher, dass du das korrekte Passwort verwendest (Standard: "A123")
+3. Überprüfe die Browser-Konsole auf Netzwerkfehler
 
 ## Support
 

@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EARBOMB Admin</title>
+    <script src="/config.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: system-ui, sans-serif;
+            background: linear-gradient(135deg, #0f0f1a, #1a1a2e);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            padding: 20px;
+        }
+        .container {
+            background: rgba(255,255,255,0.03);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 25px 80px rgba(0,0,0,0.6);
+        }
+        h1 {
+            text-align: center;
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #ff6b6b, #ffa500);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        .subtitle { text-align: center; color: #888; margin-bottom: 30px; }
+        
+        .section {
+            margin-bottom: 40px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #888;
+            font-size: 0.95em;
+        }
+        
+        input[type="text"], input[type="password"], select, textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(0,0,0,0.3);
+            color: #fff;
+            font-size: 1em;
+            font-family: inherit;
+        }
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        .color-inputs {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .color-input {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .color-input label {
+            flex: 1;
+        }
+        .color-input input[type="color"] {
+            width: 50px;
+            height: 40px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            background: transparent;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: #ff6b6b;
+        }
+        .checkbox-group label {
+            color: #aaa;
+            cursor: pointer;
+            flex: 1;
+        }
+        
+        .btn {
+            padding: 16px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #ff6b6b, #ffa500);
+            color: #fff;
+        }
+        .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(255,107,107,0.4); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+        }
+        .btn-secondary:hover { background: rgba(255,255,255,0.2); }
+        
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        .btn-group .btn {
+            flex: 1;
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            display: none;
+        }
+        .status.success {
+            background: rgba(0,255,136,0.1);
+            border: 1px solid rgba(0,255,136,0.3);
+            color: #00ff88;
+            display: block;
+        }
+        .status.error {
+            background: rgba(255,68,68,0.1);
+            border: 1px solid rgba(255,68,68,0.3);
+            color: #ff4444;
+            display: block;
+        }
+        
+        .login-container {
+            max-width: 500px;
+        }
+        
+        .tab-container {
+            margin-bottom: 30px;
+        }
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 25px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 5px;
+        }
+        .tab {
+            padding: 12px 24px;
+            border: none;
+            background: transparent;
+            color: rgba(255,255,255,0.7);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+        .tab.active {
+            background: linear-gradient(135deg, #ff6b6b, #ffa500);
+            color: #fff;
+        }
+        
+        .preview-area {
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .preview-title {
+            color: #888;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+        }
+        .preview-banner {
+            margin: 10px 0;
+            text-align: center;
+        }
+        .preview-banner img {
+            max-width: 100%;
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        #messageList {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        .message-item {
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .message-code {
+            font-family: monospace;
+            font-size: 1.2em;
+            color: #ff6b6b;
+        }
+        .message-meta {
+            color: #888;
+            font-size: 0.85em;
+        }
+        .message-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.85em;
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #ff4444, #ff0000);
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="loginContainer">
+        <h1>EARBOMB Admin</h1>
+        <p class="subtitle">Administration Panel</p>
+        
+        <div class="section">
+            <div class="form-group">
+                <label class="form-label">Admin Password</label>
+                <input type="password" id="passwordInput" placeholder="Enter current password">
+            </div>
+            <button class="btn btn-primary" id="loginBtn" style="width: 100%;">Login</button>
+        </div>
+    </div>
+    
+    <div class="container" id="adminContainer" style="display: none;">
+        <h1>EARBOMB Admin</h1>
+        <p class="subtitle">Administration Panel</p>
+        
+        <div class="tab-container">
+            <div class="tabs">
+                <button class="tab active" data-tab="config">Configuration</button>
+                <button class="tab" data-tab="messages">Messages</button>
+                <button class="tab" data-tab="password">Password</button>
+            </div>
+        </div>
+        
+        <div id="configTab" class="section active">
+            <div class="form-group">
+                <label class="form-label">Banner Mode</label>
+                <select id="bannerMode">
+                    <option value="none">No banners</option>
+                    <option value="single">Single banner</option>
+                    <option value="double">Double banners</option>
+                    <option value="triple">Triple banners</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Banner Type</label>
+                <select id="bannerType">
+                    <option value="large">Large (728x90)</option>
+                    <option value="medium">Medium (468x60)</option>
+                    <option value="small">Small (320x100)</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Banner Position</label>
+                <select id="bannerPosition">
+                    <option value="top">Top</option>
+                    <option value="bottom">Bottom</option>
+                    <option value="both">Both top and bottom</option>
+                </select>
+            </div>
+            
+            <div class="section">
+                <h3 style="color: #ff6b6b; margin-bottom: 20px;">Banner Content</h3>
+                
+                <div class="form-group">
+                    <label class="form-label">Banner 1 HTML (Primary)</label>
+                    <textarea id="bannerHtml1" placeholder="Enter HTML for banner 1 (e.g., &lt;div&gt;Ad 1&lt;/div&gt;)"></textarea>
+                    <div class="preview-area">
+                        <div class="preview-title">Preview:</div>
+                        <div class="preview-banner" id="preview1"></div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Banner 2 HTML (Secondary)</label>
+                    <textarea id="bannerHtml2" placeholder="Enter HTML for banner 2"></textarea>
+                    <div class="preview-area">
+                        <div class="preview-title">Preview:</div>
+                        <div class="preview-banner" id="preview2"></div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Banner 3 HTML (Tertiary)</label>
+                    <textarea id="bannerHtml3" placeholder="Enter HTML for banner 3"></textarea>
+                    <div class="preview-area">
+                        <div class="preview-title">Preview:</div>
+                        <div class="preview-banner" id="preview3"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h3 style="color: #ff6b6b; margin-bottom: 20px;">Banner Colors</h3>
+                
+                <div class="color-inputs">
+                    <div class="color-input">
+                        <label>Background</label>
+                        <input type="color" id="bannerBgColor" value="#ffffff">
+                    </div>
+                    <div class="color-input">
+                        <label>Border</label>
+                        <input type="color" id="bannerBorderColor" value="#ffffff">
+                    </div>
+                    <div class="color-input">
+                        <label>Text</label>
+                        <input type="color" id="bannerTextColor" value="#888888">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Background Color (CSS value)</label>
+                    <input type="text" id="bannerBgColorText" placeholder="rgba(255,255,255,0.02)">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Border Color (CSS value)</label>
+                    <input type="text" id="bannerBorderColorText" placeholder="rgba(255,255,255,0.1)">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Text Color (CSS value)</label>
+                    <input type="text" id="bannerTextColorText" placeholder="#888">
+                </div>
+            </div>
+            
+            <div class="btn-group">
+                <button class="btn btn-secondary" id="resetBtn">Reset to Default</button>
+                <button class="btn btn-primary" id="saveConfigBtn">Save Configuration</button>
+            </div>
+        </div>
+        
+        <div id="messagesTab" class="section" style="display: none;">
+            <h3 style="color: #ff6b6b; margin-bottom: 20px;">Recent Messages</h3>
+            <div id="messageList">
+                <!-- Messages will be loaded here -->
+            </div>
+            <button class="btn btn-secondary" id="refreshMessagesBtn" style="width: 100%; margin-top: 20px;">Refresh List</button>
+        </div>
+        
+        <div id="passwordTab" class="section" style="display: none;">
+            <h3 style="color: #ff6b6b; margin-bottom: 20px;">Change Admin Password</h3>
+            
+            <div class="form-group">
+                <label class="form-label">Current Password</label>
+                <input type="password" id="currentPassword" placeholder="Enter current password">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">New Password</label>
+                <input type="password" id="newPassword" placeholder="Enter new password (min 4 characters)">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Confirm New Password</label>
+                <input type="password" id="confirmPassword" placeholder="Confirm new password">
+            </div>
+            
+            <button class="btn btn-primary" id="changePasswordBtn" style="width: 100%;">Change Password</button>
+        </div>
+        
+        <div class="status" id="statusMessage"></div>
+        
+        <div class="btn-group">
+            <button class="btn btn-secondary" id="logoutBtn">Logout</button>
+            <button class="btn btn-primary" id="testConfigBtn">Test Configuration</button>
+        </div>
+    </div>
+
+    <script>
+        let adminToken = null;
+        
+        function apiUrl(path) {
+            const base = window.API_BASE_URL || 'https://api.earbomb.org';
+            return base + path;
+        }
+        
+        function showStatus(message, type = 'success') {
+            const status = document.getElementById('statusMessage');
+            status.textContent = message;
+            status.className = `status ${type}`;
+            setTimeout(() => {
+                status.className = 'status';
+            }, 5000);
+        }
+        
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab + 'Tab').classList.add('active');
+                document.getElementById(tab.dataset.tab + 'Tab').style.display = 'block';
+                
+                // Hide other tabs
+                document.querySelectorAll('.section').forEach(s => {
+                    if (!s.classList.contains('active')) {
+                        s.style.display = 'none';
+                    }
+                });
+            });
+        });
+        
+        // Login
+        document.getElementById('loginBtn').addEventListener('click', async () => {
+            const password = document.getElementById('passwordInput').value;
+            if (!password) {
+                showStatus('Please enter password', 'error');
+                return;
+            }
+            
+            try {
+                const res = await fetch(apiUrl('/api/admin/login'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+                
+                const data = await res.json();
+                if (data.success && data.token) {
+                    adminToken = data.token;
+                    document.getElementById('loginContainer').style.display = 'none';
+                    document.getElementById('adminContainer').style.display = 'block';
+                    loadConfig();
+                    loadMessages();
+                } else {
+                    showStatus('Invalid password', 'error');
+                }
+            } catch (err) {
+                showStatus('Login failed: ' + err.message, 'error');
+            }
+        });
+        
+        // Load configuration
+        async function loadConfig() {
+            try {
+                const res = await fetch(apiUrl('/api/config'));
+                const config = await res.json();
+                
+                // Set form values
+                document.getElementById('bannerMode').value = config.bannerMode || 'none';
+                document.getElementById('bannerType').value = config.bannerType || 'large';
+                document.getElementById('bannerPosition').value = config.bannerPosition || 'top';
+                
+                document.getElementById('bannerHtml1').value = config.bannerHtml1 || '';
+                document.getElementById('bannerHtml2').value = config.bannerHtml2 || '';
+                document.getElementById('bannerHtml3').value = config.bannerHtml3 || '';
+                
+                // Set color inputs
+                document.getElementById('bannerBgColorText').value = config.bannerBgColor || 'rgba(255,255,255,0.02)';
+                document.getElementById('bannerBorderColorText').value = config.bannerBorderColor || 'rgba(255,255,255,0.1)';
+                document.getElementById('bannerTextColorText').value = config.bannerTextColor || '#888';
+                
+                // Update previews
+                updatePreview('preview1', config.bannerHtml1);
+                updatePreview('preview2', config.bannerHtml2);
+                updatePreview('preview3', config.bannerHtml3);
+                
+            } catch (err) {
+                console.error('Failed to load config:', err);
+            }
+        }
+        
+        function updatePreview(previewId, html) {
+            const preview = document.getElementById(previewId);
+            if (html) {
+                preview.innerHTML = html;
+            } else {
+                preview.innerHTML = '<em>No HTML set</em>';
+            }
+        }
+        
+        // Save configuration
+        document.getElementById('saveConfigBtn').addEventListener('click', async () => {
+            if (!adminToken) {
+                showStatus('Not authenticated', 'error');
+                return;
+            }
+            
+            const config = {
+                bannerMode: document.getElementById('bannerMode').value,
+                bannerType: document.getElementById('bannerType').value,
+                bannerPosition: document.getElementById('bannerPosition').value,
+                bannerHtml1: document.getElementById('bannerHtml1').value,
+                bannerHtml2: document.getElementById('bannerHtml2').value,
+                bannerHtml3: document.getElementById('bannerHtml3').value,
+                bannerBgColor: document.getElementById('bannerBgColorText').value,
+                bannerBorderColor: document.getElementById('bannerBorderColorText').value,
+                bannerTextColor: document.getElementById('bannerTextColorText').value
+            };
+            
+            try {
+                const res = await fetch(apiUrl('/api/admin/config'), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${adminToken}`
+                    },
+                    body: JSON.stringify(config)
+                });
+                
+                const data = await res.json();
+                if (data.success) {
+                    showStatus('Configuration saved successfully');
+                    updatePreview('preview1', config.bannerHtml1);
+                    updatePreview('preview2', config.bannerHtml2);
+                    updatePreview('preview3', config.bannerHtml3);
+                } else {
+                    showStatus('Failed to save: ' + (data.error || 'Unknown error'), 'error');
+                }
+            } catch (err) {
+                showStatus('Save failed: ' + err.message, 'error');
+            }
+        });
+        
+        // Reset to default
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            if (confirm('Reset to default configuration?')) {
+                const defaultConfig = {
+                    bannerMode: 'none',
+                    bannerType: 'large',
+                    bannerPosition: 'top',
+                    bannerHtml1: '<div class="ad-banner ad-large"><a href="#" target="_blank" rel="noopener"><img src="https://via.placeholder.com/728x90/ff6b6b/ffffff?text=Advertisement+1" alt="Ad 1"></a></div>',
+                    bannerHtml2: '<div class="ad-banner ad-medium"><a href="#" target="_blank" rel="noopener"><img src="https://via.placeholder.com/468x60/ffa500/ffffff?text=Advertisement+2" alt="Ad 2"></a></div>',
+                    bannerHtml3: '<div class="ad-banner ad-small"><a href="#" target="_blank" rel="noopener"><img src="https://via.placeholder.com/320x100/667eea/ffffff?text=Advertisement+3" alt="Ad 3"></a></div>',
+                    bannerBgColor: 'rgba(255,255,255,0.02)',
+                    bannerBorderColor: 'rgba(255,255,255,0.1)',
+                    bannerTextColor: '#888'
+                };
+                
+                document.getElementById('bannerMode').value = defaultConfig.bannerMode;
+                document.getElementById('bannerType').value = defaultConfig.bannerType;
+                document.getElementById('bannerPosition').value = defaultConfig.bannerPosition;
+                document.getElementById('bannerHtml1').value = defaultConfig.bannerHtml1;
+                document.getElementById('bannerHtml2').value = defaultConfig.bannerHtml2;
+                document.getElementById('bannerHtml3').value = defaultConfig.bannerHtml3;
+                document.getElementById('bannerBgColorText').value = defaultConfig.bannerBgColor;
+                document.getElementById('bannerBorderColorText').value = defaultConfig.bannerBorderColor;
+                document.getElementById('bannerTextColorText').value = defaultConfig.bannerTextColor;
+                
+                updatePreview('preview1', defaultConfig.bannerHtml1);
+                updatePreview('preview2', defaultConfig.bannerHtml2);
+                updatePreview('preview3', defaultConfig.bannerHtml3);
+                
+                showStatus('Configuration reset to defaults (not saved yet)');
+            }
+        });
+        
+        // Load messages
+        async function loadMessages() {
+            if (!adminToken) return;
+            
+            try {
+                const res = await fetch(apiUrl('/api/admin/messages'), {
+                    headers: { 'Authorization': `Bearer ${adminToken}` }
+                });
+                const data = await res.json();
+                
+                const messageList = document.getElementById('messageList');
+                messageList.innerHTML = '';
+                
+                if (data.messages && data.messages.length > 0) {
+                    data.messages.forEach(msg => {
+                        const item = document.createElement('div');
+                        item.className = 'message-item';
+                        item.innerHTML = `
+                            <div>
+                                <div class="message-code">${msg.code}</div>
+                                <div class="message-meta">
+                                    Created: ${new Date(msg.created_at * 1000).toLocaleString()}<br>
+                                    Expires: ${new Date(msg.expires_at * 1000).toLocaleString()}<br>
+                                    Mode: ${msg.destroy_mode} | Password: ${msg.needs_password ? 'Yes' : 'No'}
+                                </div>
+                            </div>
+                            <div class="message-actions">
+                                <button class="btn btn-small btn-danger" onclick="deleteMessage('${msg.code}')">Delete</button>
+                            </div>
+                        `;
+                        messageList.appendChild(item);
+                    });
+                } else {
+                    messageList.innerHTML = '<div style="text-align: center; color: #888; padding: 30px;">No messages found</div>';
+                }
+            } catch (err) {
+                console.error('Failed to load messages:', err);
+            }
+        }
+        
+        window.deleteMessage = async function(code) {
+            if (!adminToken || !confirm(`Delete message ${code}?`)) return;
+            
+            try {
+                const res = await fetch(apiUrl(`/api/admin/delete/${code}`), {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${adminToken}` }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showStatus(`Message ${code} deleted`);
+                    loadMessages();
+                } else {
+                    showStatus('Delete failed', 'error');
+                }
+            } catch (err) {
+                showStatus('Delete failed: ' + err.message, 'error');
+            }
+        };
+        
+        // Refresh messages button
+        document.getElementById('refreshMessagesBtn').addEventListener('click', loadMessages);
+        
+        // Change password
+        document.getElementById('changePasswordBtn').addEventListener('click', async () => {
+            const current = document.getElementById('currentPassword').value;
+            const newPass = document.getElementById('newPassword').value;
+            const confirmPass = document.getElementById('confirmPassword').value;
+            
+            if (!current || !newPass || !confirmPass) {
+                showStatus('Please fill all fields', 'error');
+                return;
+            }
+            
+            if (newPass.length < 4) {
+                showStatus('New password must be at least 4 characters', 'error');
+                return;
+            }
+            
+            if (newPass !== confirmPass) {
+                showStatus('New passwords do not match', 'error');
+                return;
+            }
+            
+            try {
+                const res = await fetch(apiUrl('/api/admin/change-password'), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${adminToken}`
+                    },
+                    body: JSON.stringify({ newPassword: newPass })
+                });
+                
+                const data = await res.json();
+                if (data.success) {
+                    showStatus('Password changed successfully');
+                    document.getElementById('currentPassword').value = '';
+                    document.getElementById('newPassword').value = '';
+                    document.getElementById('confirmPassword').value = '';
+                } else {
+                    showStatus('Password change failed', 'error');
+                }
+            } catch (err) {
+                showStatus('Password change failed: ' + err.message, 'error');
+            }
+        });
+        
+        // Test configuration
+        document.getElementById('testConfigBtn').addEventListener('click', () => {
+            window.open('/', '_blank');
+        });
+        
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            adminToken = null;
+            document.getElementById('adminContainer').style.display = 'none';
+            document.getElementById('loginContainer').style.display = 'block';
+            document.getElementById('passwordInput').value = '';
+            showStatus('Logged out');
+        });
+        
+        // Color input synchronization
+        document.getElementById('bannerBgColor').addEventListener('input', (e) => {
+            document.getElementById('bannerBgColorText').value = e.target.value;
+        });
+        document.getElementById('bannerBorderColor').addEventListener('input', (e) => {
+            document.getElementById('bannerBorderColorText').value = e.target.value;
+        });
+        document.getElementById('bannerTextColor').addEventListener('input', (e) => {
+            document.getElementById('bannerTextColorText').value = e.target.value;
+        });
+        
+        // Text input synchronization
+        document.getElementById('bannerBgColorText').addEventListener('input', (e) => {
+            if (e.target.value.match(/^#[0-9A-F]{6}$/i)) {
+                document.getElementById('bannerBgColor').value = e.target.value;
+            }
+        });
+        document.getElementById('bannerBorderColorText').addEventListener('input', (e) => {
+            if (e.target.value.match(/^#[0-9A-F]{6}$/i)) {
+                document.getElementById('bannerBorderColor').value = e.target.value;
+            }
+        });
+        document.getElementById('bannerTextColorText').addEventListener('input', (e) => {
+            if (e.target.value.match(/^#[0-9A-F]{6}$/i)) {
+                document.getElementById('bannerTextColor').value = e.target.value;
+            }
+        });
+        
+        // HTML input preview
+        document.getElementById('bannerHtml1').addEventListener('input', (e) => {
+            updatePreview('preview1', e.target.value);
+        });
+        document.getElementById('bannerHtml2').addEventListener('input', (e) => {
+            updatePreview('preview2', e.target.value);
+        });
+        document.getElementById('bannerHtml3').addEventListener('input', (e) => {
+            updatePreview('preview3', e.target.value);
+        });
+        
+        // Enter key for login
+        document.getElementById('passwordInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('loginBtn').click();
+            }
+        });
+        
+        // Load initial config if token exists in localStorage
+        const savedToken = localStorage.getItem('earbomb_admin_token');
+        if (savedToken) {
+            adminToken = savedToken;
+            // Verify token by trying to load config
+            loadConfig().then(() => {
+                document.getElementById('loginContainer').style.display = 'none';
+                document.getElementById('adminContainer').style.display = 'block';
+            }).catch(() => {
+                localStorage.removeItem('earbomb_admin_token');
+                adminToken = null;
+            });
+        }
+        
+        // Save token on successful actions
+        function saveToken() {
+            if (adminToken) {
+                localStorage.setItem('earbomb_admin_token', adminToken);
+            }
+        }
+        
+        // Override login to save token
+        const originalLogin = document.getElementById('loginBtn').onclick;
+        document.getElementById('loginBtn').onclick = async function() {
+            await originalLogin?.();
+            saveToken();
+        };
+    </script>
+</body>
+</html>

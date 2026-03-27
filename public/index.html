@@ -328,9 +328,81 @@
             transform: translateY(-2px);
             box-shadow: 0 8px 30px rgba(102,126,234,0.4);
         }
+        
+        /* Banner styles */
+        .banner-container {
+            position: fixed;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            background: var(--banner-bg-color, rgba(255,255,255,0.02));
+            border-bottom: var(--banner-border, 1px solid rgba(255,255,255,0.1));
+            color: var(--banner-text-color, #888);
+            transition: all 0.3s;
+        }
+        .banner-container.top {
+            top: 0;
+            border-bottom: var(--banner-border, 1px solid rgba(255,255,255,0.1));
+        }
+        .banner-container.bottom {
+            bottom: 0;
+            border-top: var(--banner-border, 1px solid rgba(255,255,255,0.1));
+            border-bottom: none;
+        }
+        .banner-container.both {
+            position: relative;
+            margin: 0 -40px;
+            width: calc(100% + 80px);
+        }
+        
+        .ad-banner {
+            max-width: 100%;
+            text-align: center;
+        }
+        .ad-banner img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .ad-banner.ad-large {
+            width: 728px;
+            height: 90px;
+        }
+        .ad-banner.ad-medium {
+            width: 468px;
+            height: 60px;
+        }
+        .ad-banner.ad-small {
+            width: 320px;
+            height: 100px;
+        }
+        
+        /* Stacked banners spacing */
+        .banner-container > .ad-banner + .ad-banner {
+            margin-top: 10px;
+        }
+        
+        /* Adjust container for banners */
+        body.with-banner-top {
+            padding-top: 120px;
+        }
+        body.with-banner-bottom {
+            padding-bottom: 120px;
+        }
+        body.with-banner-both {
+            padding-top: 120px;
+            padding-bottom: 120px;
+        }
     </style>
 </head>
 <body>
+    <div id="bannerTop" class="banner-container top" style="display: none;"></div>
+    <div id="bannerBottom" class="banner-container bottom" style="display: none;"></div>
     <div class="container">
         <h1>EARBOMB</h1>
         <p class="subtitle">Self-Destructing Audio Messages</p>
@@ -1021,6 +1093,107 @@
             osc.stop(ctx.currentTime + 0.5);
         }
         
+        // Banner system
+        async function loadBanners() {
+            try {
+                const res = await fetch(apiUrl('/api/config'));
+                const config = await res.json();
+                
+                // Apply CSS custom properties
+                document.documentElement.style.setProperty('--banner-bg-color', config.bannerBgColor || 'rgba(255,255,255,0.02)');
+                document.documentElement.style.setProperty('--banner-border', config.bannerBorderColor ? `1px solid ${config.bannerBorderColor}` : '1px solid rgba(255,255,255,0.1)');
+                document.documentElement.style.setProperty('--banner-text-color', config.bannerTextColor || '#888');
+                
+                const bannerTop = document.getElementById('bannerTop');
+                const bannerBottom = document.getElementById('bannerBottom');
+                
+                // Clear existing banners
+                bannerTop.innerHTML = '';
+                bannerBottom.innerHTML = '';
+                
+                // Hide both initially
+                bannerTop.style.display = 'none';
+                bannerBottom.style.display = 'none';
+                document.body.classList.remove('with-banner-top', 'with-banner-bottom', 'with-banner-both');
+                
+                // Handle different banner modes
+                if (config.bannerMode === 'none' || !config.bannerMode) {
+                    return;
+                }
+                
+                // Determine banner class based on type
+                let bannerClass = '';
+                switch(config.bannerType) {
+                    case 'large':
+                        bannerClass = 'ad-large';
+                        break;
+                    case 'medium':
+                        bannerClass = 'ad-medium';
+                        break;
+                    case 'small':
+                        bannerClass = 'ad-small';
+                        break;
+                    default:
+                        bannerClass = 'ad-large';
+                }
+                
+                // Create banner HTML
+                const createBanner = (html) => {
+                    const div = document.createElement('div');
+                    div.className = `ad-banner ${bannerClass}`;
+                    div.innerHTML = html;
+                    return div;
+                };
+                
+                // Determine which banners to show based on mode
+                const banners = [];
+                if (config.bannerHtml1) banners.push(config.bannerHtml1);
+                if (config.bannerMode !== 'single' && config.bannerHtml2) banners.push(config.bannerHtml2);
+                if (config.bannerMode === 'triple' && config.bannerHtml3) banners.push(config.bannerHtml3);
+                
+                // Distribute banners based on position
+                if (config.bannerPosition === 'top') {
+                    // All banners in top container
+                    banners.forEach(html => {
+                        bannerTop.appendChild(createBanner(html));
+                    });
+                    if (banners.length > 0) {
+                        bannerTop.style.display = 'flex';
+                        document.body.classList.add('with-banner-top');
+                    }
+                } else if (config.bannerPosition === 'bottom') {
+                    // All banners in bottom container
+                    banners.forEach(html => {
+                        bannerBottom.appendChild(createBanner(html));
+                    });
+                    if (banners.length > 0) {
+                        bannerBottom.style.display = 'flex';
+                        document.body.classList.add('with-banner-bottom');
+                    }
+                } else if (config.bannerPosition === 'both') {
+                    // Distribute banners between top and bottom
+                    if (banners.length >= 1) {
+                        bannerTop.appendChild(createBanner(banners[0]));
+                        bannerTop.style.display = 'flex';
+                    }
+                    if (banners.length >= 2) {
+                        bannerBottom.appendChild(createBanner(banners[1]));
+                        bannerBottom.style.display = 'flex';
+                    }
+                    if (banners.length >= 3) {
+                        // Third banner goes to top (stacked)
+                        bannerTop.appendChild(createBanner(banners[2]));
+                    }
+                    if (bannerTop.style.display === 'flex' || bannerBottom.style.display === 'flex') {
+                        document.body.classList.add('with-banner-both');
+                    }
+                }
+                
+            } catch (err) {
+                console.error('Failed to load banners:', err);
+            }
+        }
+        
         function toast(msg, type = 'info') {
             const t = document.getElementById('toast');
             t.textContent = msg;
@@ -1040,6 +1213,9 @@
         
         window.addEventListener('hashchange', checkUrl);
         checkUrl();
+        
+        // Load banners on page load
+        loadBanners();
     </script>
 </body>
 </html>
