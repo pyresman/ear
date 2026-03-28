@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EARBOMB - Self-Destructing Audio Messages</title>
     <script src="/config.js"></script>
+    <script src="https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -718,9 +719,10 @@
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, size, size);
             
-            // Generate QR matrix
-            const qr = generateQRMatrix(text, 4);
-            const moduleCount = qr.length;
+            // Generate QR matrix using node-qrcode
+            const qr = QRCode.create(text, { errorCorrectionLevel: 'H' });
+            const modules = qr.modules;
+            const moduleCount = modules.length;
             const moduleSize = size / moduleCount;
             
             // Draw QR code with gradient
@@ -732,7 +734,7 @@
             
             for (let row = 0; row < moduleCount; row++) {
                 for (let col = 0; col < moduleCount; col++) {
-                    if (qr[row][col]) {
+                    if (modules[row][col]) {
                         // Add rounded corners to modules
                         const x = col * moduleSize;
                         const y = row * moduleSize;
@@ -769,29 +771,29 @@
         }
         
         function downloadQRCode(text) {
-            const canvas = document.getElementById('qrCanvas');
-            if (!canvas) return;
-            
             // Create a temporary canvas for higher resolution
             const scale = 4;
+            const size = 200 * scale;
             const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = canvas.width * scale;
-            tempCanvas.height = canvas.height * scale;
+            tempCanvas.width = size;
+            tempCanvas.height = size;
             const tempCtx = tempCanvas.getContext('2d');
             
             // Fill background
             tempCtx.fillStyle = '#ffffff';
-            tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+            tempCtx.fillRect(0, 0, size, size);
             
-            // Draw QR code scaled up
-            const qr = generateQRMatrix(text, 4);
-            const moduleCount = qr.length;
-            const moduleSize = tempCanvas.width / moduleCount;
+            // Generate QR matrix using node-qrcode
+            const qr = QRCode.create(text, { errorCorrectionLevel: 'H' });
+            const modules = qr.modules;
+            const moduleCount = modules.length;
+            const moduleSize = size / moduleCount;
             
+            // Draw QR code in black
             tempCtx.fillStyle = '#000000';
             for (let row = 0; row < moduleCount; row++) {
                 for (let col = 0; col < moduleCount; col++) {
-                    if (qr[row][col]) {
+                    if (modules[row][col]) {
                         tempCtx.fillRect(col * moduleSize, row * moduleSize, moduleSize, moduleSize);
                     }
                 }
@@ -802,7 +804,7 @@
             tempCtx.font = `${moduleSize * 6}px Arial`;
             tempCtx.textAlign = 'center';
             tempCtx.textBaseline = 'middle';
-            tempCtx.fillText('EARBOMB', tempCanvas.width / 2, tempCanvas.height / 2);
+            tempCtx.fillText('EARBOMB', size / 2, size / 2);
             
             // Create download link
             const link = document.createElement('a');
@@ -813,164 +815,7 @@
             toast('QR code downloaded!', 'success');
         }
         
-        function generateQRMatrix(text, errorLevel) {
-            const data = textToBytes(text);
-            const version = getQRVersion(data.length + text.length);
-            const moduleCount = version * 4 + 17;
-            const matrix = Array(moduleCount).fill(null).map(() => Array(moduleCount).fill(null));
-            
-            addFinderPatterns(matrix, moduleCount);
-            addAlignmentPatterns(matrix, moduleCount, version);
-            addTimingPatterns(matrix, moduleCount);
-            addFormatInfo(matrix, moduleCount, errorLevel);
-            addVersionInfo(matrix, moduleCount, version);
-            addDarkModule(matrix, version);
-            
-            const mask = createMaskedData(matrix, data, moduleCount, version, errorLevel);
-            
-            for (let row = 0; row < moduleCount; row++) {
-                for (let col = 0; col < moduleCount; col++) {
-                    if (mask[row][col] === null) {
-                        mask[row][col] = false;
-                    }
-                }
-            }
-            
-            return mask;
-        }
-        
-        function textToBytes(text) {
-            const bytes = [];
-            for (let i = 0; i < text.length; i++) {
-                bytes.push(text.charCodeAt(i));
-            }
-            return bytes;
-        }
-        
-        function getQRVersion(dataLength) {
-            const capacities = [17, 32, 53, 78, 106, 134, 154, 192, 230, 271, 321, 367, 425, 458, 520, 586, 644, 718, 792, 858];
-            for (let v = 0; v < capacities.length; v++) {
-                if (dataLength <= capacities[v]) return v + 1;
-            }
-            return 40;
-        }
-        
-        function addFinderPatterns(matrix, size) {
-            const positions = [[0, 0], [size - 7, 0], [0, size - 7]];
-            positions.forEach(([startRow, startCol]) => {
-                for (let r = 0; r < 7; r++) {
-                    for (let c = 0; c < 7; c++) {
-                        const isEdge = r === 0 || r === 6 || c === 0 || c === 6;
-                        const isInner = r >= 2 && r <= 4 && c >= 2 && c <= 4;
-                        matrix[startRow + r][startCol + c] = isEdge || isInner;
-                    }
-                }
-                for (let r = 1; r < 6; r++) {
-                    matrix[startRow + r][startCol + 7] = true;
-                    matrix[startRow + 7][startCol + r] = true;
-                }
-            });
-        }
-        
-        function addAlignmentPatterns(matrix, size, version) {
-            if (version < 2) return;
-            const positions = getAlignmentPositions(version, size);
-            positions.forEach(row => {
-                positions.forEach(col => {
-                    if (matrix[row][col] !== null) return;
-                    for (let r = -2; r <= 2; r++) {
-                        for (let c = -2; c <= 2; c++) {
-                            const isEdge = Math.abs(r) === 2 || Math.abs(c) === 2;
-                            const isCenter = r === 0 && c === 0;
-                            if (row + r >= 0 && row + r < size && col + c >= 0 && col + c < size) {
-                                matrix[row + r][col + c] = isEdge || isCenter;
-                            }
-                        }
-                    }
-                });
-            });
-        }
-        
-        function getAlignmentPositions(version, size) {
-            if (version === 1) return [];
-            const intervals = Math.floor(version / 7) + 1;
-            const step = Math.floor((size - 13) / intervals);
-            const positions = [6];
-            for (let i = 1; i <= intervals; i++) {
-                positions.push(size - 7 - (intervals - i) * step);
-            }
-            return positions;
-        }
-        
-        function addTimingPatterns(matrix, size) {
-            for (let i = 8; i < size - 8; i++) {
-                matrix[6][i] = i % 2 === 0;
-                matrix[i][6] = i % 2 === 0;
-            }
-        }
-        
-        function addFormatInfo(matrix, size, errorLevel) {
-            const formatBits = (errorLevel << 3) | 0;
-            const hash = textToBytes('EARBOMB').reduce((a, b) => a ^ b, formatBits);
-            
-            for (let i = 0; i < 15; i++) {
-                const bit = (hash >> i) & 1;
-                if (i < 6) matrix[i][8] = (bit ^ (i % 2)) === 1;
-                else if (i < 8) matrix[i + 1][8] = (bit ^ (i % 2)) === 1;
-                else matrix[8][14 - i] = (bit ^ (i % 2)) === 1;
-                
-                if (i < 8) matrix[8][size - 1 - i] = bit === 1;
-                else if (i < 9) matrix[8][5] = bit === 1;
-                else matrix[size - 15 + i][8] = bit === 1;
-            }
-            matrix[8][size - 8] = true;
-        }
-        
-        function addVersionInfo(matrix, size, version) {
-            if (version < 7) return;
-            const versionBits = version << 12;
-            for (let i = 0; i < 18; i++) {
-                const bit = (versionBits >> i) & 1;
-                const row = Math.floor(i / 3);
-                const col = i % 3;
-                matrix[row][size - 11 + col] = bit === 1;
-                matrix[size - 11 + col][row] = bit === 1;
-            }
-        }
-        
-        function addDarkModule(matrix, version) {
-            matrix[version * 4 + 9][8] = true;
-        }
-        
-        function createMaskedData(matrix, data, size, version, errorLevel) {
-            const dataArea = [];
-            const reserved = Array(size).fill(null).map(() => Array(size).fill(false));
-            
-            for (let r = 0; r < size; r++) {
-                for (let c = 0; c < size; c++) {
-                    if (matrix[r][c] !== null) reserved[r][c] = true;
-                }
-            }
-            
-            let dataIndex = 0;
-            for (let col = size - 1; col > 0; col -= 2) {
-                if (col === 6) col = 5;
-                for (let row = 0; row < size; row++) {
-                    for (let c = 0; c < 2; c++) {
-                        const actualCol = col - c;
-                        if (!reserved[row][actualCol] && dataIndex < data.length * 8) {
-                            const byteIndex = Math.floor(dataIndex / 8);
-                            const bitIndex = 7 - (dataIndex % 8);
-                            const bit = (data[byteIndex % data.length] >> bitIndex) & 1;
-                            matrix[row][actualCol] = bit === 1;
-                            dataIndex++;
-                        }
-                    }
-                }
-            }
-            
-            return matrix;
-        }
+
         
         function setupShareButtons(code, link, password) {
             const shareText = password 
