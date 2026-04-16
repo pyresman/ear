@@ -186,6 +186,10 @@ app.post('/api/message/:code/play', (req, res) => {
     res.json({ success: true, audio: msg.audio });
 });
 
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 function cleanExpired() {
     const now = Date.now();
     let changed = false;
