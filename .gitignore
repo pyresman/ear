@@ -2,6 +2,8 @@ node_modules/
 earbomb.db
 uploads/
 .messages.json
+.banners.json
+public/uploads/
 
 # Local Netlify folder
 .netlify

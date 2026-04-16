@@ -942,99 +942,53 @@
         // Banner system
         async function loadBanners() {
             try {
-                const res = await fetch(apiUrl('/api/config'));
-                const config = await res.json();
-                
-                // Apply CSS custom properties
-                document.documentElement.style.setProperty('--banner-bg-color', config.bannerBgColor || 'rgba(255,255,255,0.02)');
-                document.documentElement.style.setProperty('--banner-border', config.bannerBorderColor ? `1px solid ${config.bannerBorderColor}` : '1px solid rgba(255,255,255,0.1)');
-                document.documentElement.style.setProperty('--banner-text-color', config.bannerTextColor || '#888');
-                
-                const bannerTop = document.getElementById('bannerTop');
+                const res = await fetch(apiUrl('/api/banners'));
+                const cfg = await res.json();
+
+                const bannerTop    = document.getElementById('bannerTop');
                 const bannerBottom = document.getElementById('bannerBottom');
-                
-                // Clear existing banners
                 bannerTop.innerHTML = '';
                 bannerBottom.innerHTML = '';
-                
-                // Hide both initially
                 bannerTop.style.display = 'none';
                 bannerBottom.style.display = 'none';
                 document.body.classList.remove('with-banner-top', 'with-banner-bottom', 'with-banner-both');
-                
-                // Handle different banner modes
-                if (config.bannerMode === 'none' || !config.bannerMode) {
-                    return;
+
+                function buildBanner(position, posConfig) {
+                    if (!posConfig || !posConfig.enabled || !posConfig.imageUrl) return null;
+                    const sizeClass = posConfig.size === 'small' ? 'ad-small' : 'ad-large';
+                    const wrap = document.createElement('div');
+                    wrap.className = `ad-banner ${sizeClass}`;
+                    const img = document.createElement('img');
+                    img.src = posConfig.imageUrl;
+                    img.alt = 'Banner';
+                    if (posConfig.imageLink) {
+                        const a = document.createElement('a');
+                        a.href = posConfig.imageLink;
+                        a.target = '_blank';
+                        a.rel = 'noopener noreferrer';
+                        a.appendChild(img);
+                        wrap.appendChild(a);
+                    } else {
+                        wrap.appendChild(img);
+                    }
+                    return wrap;
                 }
-                
-                // Determine banner class based on type
-                let bannerClass = '';
-                switch(config.bannerType) {
-                    case 'large':
-                        bannerClass = 'ad-large';
-                        break;
-                    case 'medium':
-                        bannerClass = 'ad-medium';
-                        break;
-                    case 'small':
-                        bannerClass = 'ad-small';
-                        break;
-                    default:
-                        bannerClass = 'ad-large';
+
+                const topBanner    = buildBanner('header', cfg.header);
+                const bottomBanner = buildBanner('footer', cfg.footer);
+
+                if (topBanner) {
+                    bannerTop.appendChild(topBanner);
+                    bannerTop.style.display = 'flex';
+                    document.body.classList.add(bottomBanner ? 'with-banner-both' : 'with-banner-top');
                 }
-                
-                // Create banner HTML
-                const createBanner = (html) => {
-                    const div = document.createElement('div');
-                    div.className = `ad-banner ${bannerClass}`;
-                    div.innerHTML = html;
-                    return div;
-                };
-                
-                // Determine which banners to show based on mode
-                const banners = [];
-                if (config.bannerHtml1) banners.push(config.bannerHtml1);
-                if (config.bannerMode !== 'single' && config.bannerHtml2) banners.push(config.bannerHtml2);
-                if (config.bannerMode === 'triple' && config.bannerHtml3) banners.push(config.bannerHtml3);
-                
-                // Distribute banners based on position
-                if (config.bannerPosition === 'top') {
-                    // All banners in top container
-                    banners.forEach(html => {
-                        bannerTop.appendChild(createBanner(html));
-                    });
-                    if (banners.length > 0) {
-                        bannerTop.style.display = 'flex';
-                        document.body.classList.add('with-banner-top');
-                    }
-                } else if (config.bannerPosition === 'bottom') {
-                    // All banners in bottom container
-                    banners.forEach(html => {
-                        bannerBottom.appendChild(createBanner(html));
-                    });
-                    if (banners.length > 0) {
-                        bannerBottom.style.display = 'flex';
-                        document.body.classList.add('with-banner-bottom');
-                    }
-                } else if (config.bannerPosition === 'both') {
-                    // Distribute banners between top and bottom
-                    if (banners.length >= 1) {
-                        bannerTop.appendChild(createBanner(banners[0]));
-                        bannerTop.style.display = 'flex';
-                    }
-                    if (banners.length >= 2) {
-                        bannerBottom.appendChild(createBanner(banners[1]));
-                        bannerBottom.style.display = 'flex';
-                    }
-                    if (banners.length >= 3) {
-                        // Third banner goes to top (stacked)
-                        bannerTop.appendChild(createBanner(banners[2]));
-                    }
-                    if (bannerTop.style.display === 'flex' || bannerBottom.style.display === 'flex') {
-                        document.body.classList.add('with-banner-both');
-                    }
+                if (bottomBanner) {
+                    bannerBottom.appendChild(bottomBanner);
+                    bannerBottom.style.display = 'flex';
+                    if (!topBanner) document.body.classList.add('with-banner-bottom');
+                    else document.body.classList.add('with-banner-both');
                 }
-                
+
             } catch (err) {
                 console.error('Failed to load banners:', err);
             }

@@ -6,9 +6,18 @@ const QRCode = require('qrcode');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'earbomb-admin';
 
 const STORE_FILE = path.join(__dirname, '.messages.json');
+const BANNER_FILE = path.join(__dirname, '.banners.json');
+const UPLOAD_DIR = path.join(__dirname, 'public', 'uploads');
+
 const messages = new Map();
+let bannerConfig = {
+    header: { enabled: false, size: 'large', imageUrl: '', imageLink: '' },
+    footer: { enabled: false, size: 'large', imageUrl: '', imageLink: '' }
+};
+const adminSessions = new Set();
 
 function loadMessages() {
     try {
@@ -35,7 +44,30 @@ function saveMessages() {
     }
 }
 
+function loadBanners() {
+    try {
+        if (fs.existsSync(BANNER_FILE)) {
+            bannerConfig = JSON.parse(fs.readFileSync(BANNER_FILE, 'utf8'));
+        }
+    } catch (err) {
+        console.error('Could not load banners:', err.message);
+    }
+}
+
+function saveBanners() {
+    try {
+        fs.writeFileSync(BANNER_FILE, JSON.stringify(bannerConfig, null, 2));
+    } catch (err) {
+        console.error('Could not save banners:', err.message);
+    }
+}
+
 loadMessages();
+loadBanners();
+
+if (!fs.existsSync(UPLOAD_DIR)) {
+    fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+}
 
 function generateCode() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -50,15 +82,23 @@ function hashPassword(password) {
     return crypto.createHash('sha256').update(password).digest('hex');
 }
 
+function adminAuth(req, res, next) {
+    const token = req.headers['x-admin-token'];
+    if (!token || !adminSessions.has(token)) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+    next();
+}
+
 app.use((req, res, next) => {
     if (req.path.startsWith('/api/')) {
-        console.log(`[${new Date().toISOString()}] ${req.method} ${req.path} | host:${req.get('host')} | ua:${(req.get('user-agent')||'').slice(0,40)}`);
+        console.log(`[${new Date().toISOString()}] ${req.method} ${req.path} | host:${req.get('host')} | ua:${(req.get('user-agent') || '').slice(0, 40)}`);
     }
     next();
 });
 
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '20mb' }));
 
 app.get('/api/config', (req, res) => {
     res.json({
@@ -69,19 +109,85 @@ app.get('/api/config', (req, res) => {
         showDisclaimer: true,
         disclaimerText: 'By using this service, you agree that audio messages are automatically deleted after being played or after the time expires.',
         tickerText: 'Welcome to EARBOMB - Self-destructing audio messages that disappear forever!',
-        tickerEnabled: true,
-        bannerMode: 'none',
-        bannerType: 'large',
-        bannerPosition: 'top',
-        bannerHtml1: '',
-        bannerHtml2: '',
-        bannerHtml3: '',
-        bannerBgColor: 'rgba(255,255,255,0.02)',
-        bannerBorderColor: 'rgba(255,255,255,0.1)',
-        bannerTextColor: '#888',
-        adTopEnabled: false,
-        adBottomEnabled: false
+        tickerEnabled: true
     });
+});
+
+app.get('/api/banners', (req, res) => {
+    res.json(bannerConfig);
+});
+
+app.post('/api/admin/login', (req, res) => {
+    const { password } = req.body;
+    if (password === ADMIN_PASSWORD) {
+        const token = crypto.randomBytes(32).toString('hex');
+        adminSessions.add(token);
+        res.json({ success: true, token });
+    } else {
+        res.status(401).json({ error: 'Falsches Passwort' });
+    }
+});
+
+app.get('/api/admin/banners', adminAuth, (req, res) => {
+    res.json(bannerConfig);
+});
+
+app.post('/api/admin/banners', adminAuth, (req, res) => {
+    const { header, footer } = req.body;
+    if (header !== undefined) bannerConfig.header = { ...bannerConfig.header, ...header };
+    if (footer !== undefined) bannerConfig.footer = { ...bannerConfig.footer, ...footer };
+    saveBanners();
+    res.json({ success: true, bannerConfig });
+});
+
+app.post('/api/admin/banner/upload', adminAuth, (req, res) => {
+    const { position, imageData, mimeType } = req.body;
+    if (!imageData || !position || !['header', 'footer'].includes(position)) {
+        return res.status(400).json({ error: 'Ungültige Daten' });
+    }
+
+    const ext = mimeType === 'image/png' ? 'png' : mimeType === 'image/gif' ? 'gif' : mimeType === 'image/webp' ? 'webp' : 'jpg';
+    const filename = `${position}-${Date.now()}.${ext}`;
+    const filePath = path.join(UPLOAD_DIR, filename);
+
+    try {
+        const base64Data = imageData.replace(/^data:image\/[a-z]+;base64,/, '');
+        fs.writeFileSync(filePath, Buffer.from(base64Data, 'base64'));
+
+        const oldUrl = bannerConfig[position].imageUrl;
+        if (oldUrl && oldUrl.startsWith('/uploads/')) {
+            const oldFile = path.join(__dirname, 'public', oldUrl);
+            if (fs.existsSync(oldFile)) {
+                try { fs.unlinkSync(oldFile); } catch (e) {}
+            }
+        }
+
+        bannerConfig[position].imageUrl = `/uploads/${filename}`;
+        saveBanners();
+        res.json({ success: true, imageUrl: `/uploads/${filename}` });
+    } catch (err) {
+        console.error('Upload error:', err);
+        res.status(500).json({ error: 'Upload fehlgeschlagen' });
+    }
+});
+
+app.delete('/api/admin/banner/:position', adminAuth, (req, res) => {
+    const { position } = req.params;
+    if (!['header', 'footer'].includes(position)) {
+        return res.status(400).json({ error: 'Ungültige Position' });
+    }
+
+    const oldUrl = bannerConfig[position].imageUrl;
+    if (oldUrl && oldUrl.startsWith('/uploads/')) {
+        const oldFile = path.join(__dirname, 'public', oldUrl);
+        if (fs.existsSync(oldFile)) {
+            try { fs.unlinkSync(oldFile); } catch (e) {}
+        }
+    }
+
+    bannerConfig[position].imageUrl = '';
+    saveBanners();
+    res.json({ success: true });
 });
 
 app.get('/api/qr', async (req, res) => {
@@ -191,6 +297,10 @@ app.post('/api/message/:code/play', (req, res) => {
 
     saveMessages();
     res.json({ success: true, audio: msg.audio });
+});
+
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
 app.get('*', (req, res) => {
