@@ -310,28 +310,6 @@
         .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); }
         .footer p { font-size: 0.85em; color: #666; }
         
-        .direct-link-section {
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid rgba(255,255,255,0.1);
-        }
-        .direct-link-btn {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: #fff;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 0.95em;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s;
-        }
-        .direct-link-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(102,126,234,0.4);
-        }
         
         /* Banner styles */
         .banner-container {
@@ -509,11 +487,6 @@
                     </button>
                 </div>
                 
-                <div class="direct-link-section">
-                    <button class="direct-link-btn" id="openLinkBtn">
-                        Open Listen Link
-                    </button>
-                </div>
                 
                 <div class="btn-group">
                     <button class="btn btn-primary" id="copyBtn">Copy All</button>
@@ -751,9 +724,6 @@
             };
             document.getElementById('copyLinkBtn').onclick = () => {
                 navigator.clipboard.writeText(link).then(() => toast('Link kopiert!', 'success'));
-            };
-            document.getElementById('openLinkBtn').onclick = () => {
-                window.open(link, '_blank');
             };
             document.getElementById('qrDownloadBtn').onclick = () => {
                 downloadQRCode(link);
