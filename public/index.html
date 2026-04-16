@@ -934,7 +934,7 @@
             loadBtn.textContent = 'Loading...';
             
             try {
-                const res = await fetch(apiUrl(`/${code}`));
+                const res = await fetch(apiUrl(`/api/message/${code}`));
                 const data = await res.json();
                 
                 if (data.exists) {
@@ -950,7 +950,7 @@
                         }
                     }
                     
-                    const playRes = await fetch(apiUrl(`/${code}/play`), {
+                    const playRes = await fetch(apiUrl(`/api/message/${code}/play`), {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ password: receivePassword.value || '' })

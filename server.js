@@ -3,12 +3,17 @@ const crypto = require('crypto');
 const path = require('path');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 
 const messages = new Map();
 
 function generateCode() {
-    return crypto.randomBytes(4).toString('hex').toUpperCase();
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let i = 0; i < 6; i++) {
+        code += chars[Math.floor(Math.random() * chars.length)];
+    }
+    return code;
 }
 
 function hashPassword(password) {
@@ -18,15 +23,39 @@ function hashPassword(password) {
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json({ limit: '10mb' }));
 
+app.get('/api/config', (req, res) => {
+    res.json({
+        primaryColor: '#ff6b6b',
+        secondaryColor: '#ffa500',
+        title: 'EARBOMB',
+        subtitle: 'Self-Destructing Audio Messages',
+        showDisclaimer: true,
+        disclaimerText: 'By using this service, you agree that audio messages are automatically deleted after being played or after the time expires.',
+        tickerText: 'Welcome to EARBOMB - Self-destructing audio messages that disappear forever!',
+        tickerEnabled: true,
+        bannerMode: 'none',
+        bannerType: 'large',
+        bannerPosition: 'top',
+        bannerHtml1: '',
+        bannerHtml2: '',
+        bannerHtml3: '',
+        bannerBgColor: 'rgba(255,255,255,0.02)',
+        bannerBorderColor: 'rgba(255,255,255,0.1)',
+        bannerTextColor: '#888',
+        adTopEnabled: false,
+        adBottomEnabled: false
+    });
+});
+
 app.post('/api/create', (req, res) => {
     try {
         const { audio, destroyMode, destroyTime, password } = req.body;
         if (!audio) return res.status(400).json({ error: 'No audio provided' });
-        
+
         const code = generateCode();
         const now = Date.now();
         const expiresAt = now + (parseInt(destroyTime) || 3600) * 1000;
-        
+
         const message = {
             audio,
             destroyMode: destroyMode || 'play',
@@ -36,14 +65,15 @@ app.post('/api/create', (req, res) => {
             password: password ? hashPassword(password) : null,
             needsPassword: !!password
         };
-        
+
         messages.set(code, message);
-        
+
+        const proto = req.headers['x-forwarded-proto'] || req.protocol || 'https';
         const host = req.get('host');
         res.json({
             success: true,
             code,
-            link: `http://${host}/${code}`,
+            link: `${proto}://${host}/?code=${code}`,
             expiresAt,
             hasPassword: !!password
         });
@@ -53,22 +83,22 @@ app.post('/api/create', (req, res) => {
     }
 });
 
-app.get('/:code', (req, res) => {
+app.get('/api/message/:code', (req, res) => {
     const code = req.params.code.toUpperCase();
     const msg = messages.get(code);
-    
+
     if (!msg) return res.status(404).json({ exists: false, error: 'Message not found' });
     if (Date.now() > msg.expiresAt) {
         messages.delete(code);
         return res.status(410).json({ exists: false, error: 'Message expired' });
     }
-    
+
     const isPlayMode = msg.destroyMode === 'play' || msg.destroyMode === 'both';
     if (isPlayMode && msg.accessed) {
         messages.delete(code);
         return res.status(410).json({ exists: false, error: 'Message already played' });
     }
-    
+
     res.json({
         exists: true,
         createdAt: msg.createdAt,
@@ -79,34 +109,34 @@ app.get('/:code', (req, res) => {
     });
 });
 
-app.post('/:code/play', (req, res) => {
+app.post('/api/message/:code/play', (req, res) => {
     const code = req.params.code.toUpperCase();
     const msg = messages.get(code);
-    
+
     if (!msg) return res.status(404).json({ error: 'Message not found' });
     if (Date.now() > msg.expiresAt) {
         messages.delete(code);
         return res.status(410).json({ error: 'Message expired' });
     }
-    
+
     if (msg.accessed && msg.destroyMode === 'play') {
         messages.delete(code);
         return res.status(410).json({ error: 'Already played' });
     }
-    
+
     if (msg.needsPassword) {
         const inputHash = hashPassword(req.body.password || '');
         if (inputHash !== msg.password) {
             return res.status(401).json({ error: 'Invalid password' });
         }
     }
-    
+
     msg.accessed = true;
-    
+
     if (msg.destroyMode === 'play' || msg.destroyMode === 'both') {
         messages.delete(code);
     }
-    
+
     res.json({ success: true, audio: msg.audio });
 });
 
@@ -119,4 +149,4 @@ function cleanExpired() {
 
 setInterval(cleanExpired, 60000);
 
-app.listen(PORT, () => console.log(`EARBOMB running on http://localhost:${PORT}`));
+app.listen(PORT, '0.0.0.0', () => console.log(`EARBOMB running on http://0.0.0.0:${PORT}`));
