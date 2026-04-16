@@ -1,12 +1,41 @@
 const express = require('express');
 const crypto = require('crypto');
 const path = require('path');
+const fs = require('fs');
 const QRCode = require('qrcode');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+const STORE_FILE = path.join(__dirname, '.messages.json');
 const messages = new Map();
+
+function loadMessages() {
+    try {
+        if (fs.existsSync(STORE_FILE)) {
+            const raw = JSON.parse(fs.readFileSync(STORE_FILE, 'utf8'));
+            const now = Date.now();
+            for (const [code, msg] of Object.entries(raw)) {
+                if (msg.expiresAt > now) messages.set(code, msg);
+            }
+            console.log(`Loaded ${messages.size} active messages from disk`);
+        }
+    } catch (err) {
+        console.error('Could not load messages:', err.message);
+    }
+}
+
+function saveMessages() {
+    try {
+        const obj = {};
+        for (const [code, msg] of messages) obj[code] = msg;
+        fs.writeFileSync(STORE_FILE, JSON.stringify(obj));
+    } catch (err) {
+        console.error('Could not save messages:', err.message);
+    }
+}
+
+loadMessages();
 
 function generateCode() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -80,6 +109,7 @@ app.post('/api/create', (req, res) => {
         };
 
         messages.set(code, message);
+        saveMessages();
 
         const proto = req.headers['x-forwarded-proto'] || req.protocol || 'https';
         const host = req.get('host');
@@ -129,11 +159,13 @@ app.post('/api/message/:code/play', (req, res) => {
     if (!msg) return res.status(404).json({ error: 'Message not found' });
     if (Date.now() > msg.expiresAt) {
         messages.delete(code);
+        saveMessages();
         return res.status(410).json({ error: 'Message expired' });
     }
 
     if (msg.accessed && msg.destroyMode === 'play') {
         messages.delete(code);
+        saveMessages();
         return res.status(410).json({ error: 'Already played' });
     }
 
@@ -150,14 +182,17 @@ app.post('/api/message/:code/play', (req, res) => {
         messages.delete(code);
     }
 
+    saveMessages();
     res.json({ success: true, audio: msg.audio });
 });
 
 function cleanExpired() {
     const now = Date.now();
+    let changed = false;
     for (const [code, msg] of messages) {
-        if (msg.expiresAt < now) messages.delete(code);
+        if (msg.expiresAt < now) { messages.delete(code); changed = true; }
     }
+    if (changed) saveMessages();
 }
 
 setInterval(cleanExpired, 60000);
