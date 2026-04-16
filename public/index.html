@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EARBOMB - Self-Destructing Audio Messages</title>
     <script src="/config.js"></script>
-    <script src="https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -470,52 +469,37 @@
                 
                 <div class="qr-section">
                     <div class="qr-container">
-                        <canvas id="qrCanvas" width="200" height="200"></canvas>
+                        <img id="qrCanvas" width="200" height="200" alt="QR Code" style="display:block;">
                     </div>
                 </div>
                 
-                <div class="share-options" id="shareOptions" style="display:none;">
+                <div class="share-options" id="shareOptions">
                     <button class="share-btn native" id="nativeShareBtn" style="display:none;">
-                        <span>Share</span>
+                        <span>📤 Teilen</span>
                     </button>
                     <button class="share-btn whatsapp" id="whatsappBtn">
-                        WhatsApp
+                        💬 WhatsApp
                     </button>
                     <button class="share-btn telegram" id="telegramBtn">
-                        Telegram
+                        ✈️ Telegram
                     </button>
                     <button class="share-btn signal" id="signalBtn">
-                        Signal
-                    </button>
-                    <button class="share-btn email" id="emailBtn">
-                        Email
-                    </button>
-                    <button class="share-btn sms" id="smsBtn">
-                        SMS
-                    </button>
-                    <button class="share-btn clipboard" id="copyLinkBtn">
-                        Copy Link
-                    </button>
-                    <button class="share-btn session" id="sessionBtn">
-                        Session
+                        🔒 Signal
                     </button>
                     <button class="share-btn threema" id="threemaBtn">
-                        Threema
+                        🛡️ Threema
                     </button>
-                    <button class="share-btn wire" id="wireBtn">
-                        Wire
+                    <button class="share-btn email" id="emailBtn">
+                        ✉️ E-Mail
                     </button>
-                    <button class="share-btn messenger" id="messengerBtn">
-                        Messenger
+                    <button class="share-btn sms" id="smsBtn">
+                        💬 SMS
                     </button>
-                    <button class="share-btn twitter" id="twitterBtn">
-                        Twitter
-                    </button>
-                    <button class="share-btn skype" id="skypeBtn">
-                        Skype
+                    <button class="share-btn clipboard" id="copyLinkBtn">
+                        📋 Link kopieren
                     </button>
                     <button class="share-btn qrdownload" id="qrDownloadBtn">
-                        Download QR
+                        📷 QR speichern
                     </button>
                 </div>
                 
@@ -711,182 +695,60 @@
         });
         
         function generateQRCode(text) {
-            const canvas = document.getElementById('qrCanvas');
-            const ctx = canvas.getContext('2d');
-            const size = 200;
-            
-            // Clear canvas
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, size, size);
-            
-            // Generate QR matrix using node-qrcode
-            const qr = QRCode.create(text, { errorCorrectionLevel: 'H' });
-            const modules = qr.modules;
-            const moduleCount = modules.length;
-            const moduleSize = size / moduleCount;
-            
-            // Draw QR code with gradient
-            const gradient = ctx.createLinearGradient(0, 0, size, size);
-            gradient.addColorStop(0, '#ff6b6b');
-            gradient.addColorStop(0.5, '#ffa500');
-            gradient.addColorStop(1, '#667eea');
-            ctx.fillStyle = gradient;
-            
-            for (let row = 0; row < moduleCount; row++) {
-                for (let col = 0; col < moduleCount; col++) {
-                    if (modules[row][col]) {
-                        // Add rounded corners to modules
-                        const x = col * moduleSize;
-                        const y = row * moduleSize;
-                        const radius = moduleSize * 0.2;
-                        ctx.beginPath();
-                        ctx.moveTo(x + radius, y);
-                        ctx.lineTo(x + moduleSize - radius, y);
-                        ctx.quadraticCurveTo(x + moduleSize, y, x + moduleSize, y + radius);
-                        ctx.lineTo(x + moduleSize, y + moduleSize - radius);
-                        ctx.quadraticCurveTo(x + moduleSize, y + moduleSize, x + moduleSize - radius, y + moduleSize);
-                        ctx.lineTo(x + radius, y + moduleSize);
-                        ctx.quadraticCurveTo(x, y + moduleSize, x, y + moduleSize - radius);
-                        ctx.lineTo(x, y + radius);
-                        ctx.quadraticCurveTo(x, y, x + radius, y);
-                        ctx.closePath();
-                        ctx.fill();
-                    }
-                }
-            }
-            
-            // Add EARBOMB logo in center
-            const centerSize = moduleSize * 7;
-            const centerX = size / 2 - centerSize / 2;
-            const centerY = size / 2 - centerSize / 2;
-            
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(centerX, centerY, centerSize, centerSize);
-            
-            ctx.fillStyle = '#ff6b6b';
-            ctx.font = `${moduleSize * 3}px Arial`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('EB', size / 2, size / 2);
+            const img = document.getElementById('qrCanvas');
+            img.src = '/api/qr?url=' + encodeURIComponent(text);
         }
         
         function downloadQRCode(text) {
-            // Create a temporary canvas for higher resolution
-            const scale = 4;
-            const size = 200 * scale;
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = size;
-            tempCanvas.height = size;
-            const tempCtx = tempCanvas.getContext('2d');
-            
-            // Fill background
-            tempCtx.fillStyle = '#ffffff';
-            tempCtx.fillRect(0, 0, size, size);
-            
-            // Generate QR matrix using node-qrcode
-            const qr = QRCode.create(text, { errorCorrectionLevel: 'H' });
-            const modules = qr.modules;
-            const moduleCount = modules.length;
-            const moduleSize = size / moduleCount;
-            
-            // Draw QR code in black
-            tempCtx.fillStyle = '#000000';
-            for (let row = 0; row < moduleCount; row++) {
-                for (let col = 0; col < moduleCount; col++) {
-                    if (modules[row][col]) {
-                        tempCtx.fillRect(col * moduleSize, row * moduleSize, moduleSize, moduleSize);
-                    }
-                }
-            }
-            
-            // Add EARBOMB logo/text in center
-            tempCtx.fillStyle = '#ff6b6b';
-            tempCtx.font = `${moduleSize * 6}px Arial`;
-            tempCtx.textAlign = 'center';
-            tempCtx.textBaseline = 'middle';
-            tempCtx.fillText('EARBOMB', size / 2, size / 2);
-            
-            // Create download link
             const link = document.createElement('a');
-            link.download = `earbomb-${text.split('/').pop() || 'code'}.png`;
-            link.href = tempCanvas.toDataURL('image/png');
+            link.download = 'earbomb-qr.png';
+            link.href = '/api/qr?url=' + encodeURIComponent(text);
             link.click();
-            
-            toast('QR code downloaded!', 'success');
+            toast('QR Code gespeichert!', 'success');
         }
         
 
         
         function setupShareButtons(code, link, password) {
-            const shareText = password 
-                ? `Listen to this EARBOMB message!\n\nCode: ${code}\nLink: ${link}\nPassword: ${password}`
-                : `Listen to this EARBOMB message!\n\nCode: ${code}\nLink: ${link}`;
+            const shareText = password
+                ? `Hör dir diese EARBOMB Nachricht an!\n\nCode: ${code}\nLink: ${link}\nPasswort: ${password}`
+                : `Hör dir diese EARBOMB Nachricht an!\n\nCode: ${code}\nLink: ${link}`;
             
-            document.getElementById('nativeShareBtn').onclick = async () => {
-                try {
-                    await navigator.share({
-                        title: 'EARBOMB Message',
-                        text: shareText,
-                        url: link
-                    });
-                } catch (err) {
-                    if (err.name !== 'AbortError') toast('Share failed', 'error');
-                }
-            };
+            if (navigator.share) {
+                document.getElementById('nativeShareBtn').style.display = 'flex';
+                document.getElementById('nativeShareBtn').onclick = async () => {
+                    try {
+                        await navigator.share({ title: 'EARBOMB Nachricht', text: shareText, url: link });
+                    } catch (err) {
+                        if (err.name !== 'AbortError') toast('Teilen fehlgeschlagen', 'error');
+                    }
+                };
+            }
             
             document.getElementById('whatsappBtn').onclick = () => {
                 window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank');
             };
-            
             document.getElementById('telegramBtn').onclick = () => {
-                window.open(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent('EARBOMB Message: ' + code)}`, '_blank');
+                window.open(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent('EARBOMB: ' + code)}`, '_blank');
             };
-            
             document.getElementById('signalBtn').onclick = () => {
-                window.open(`signal://send?text=${encodeURIComponent(shareText)}`, '_blank');
+                window.open(`https://signal.me/#p/${encodeURIComponent(shareText)}`, '_blank');
             };
-            
-            document.getElementById('emailBtn').onclick = () => {
-                window.open(`mailto:?subject=EARBOMB Message&body=${encodeURIComponent(shareText)}`, '_blank');
-            };
-            
-            document.getElementById('smsBtn').onclick = () => {
-                window.open(`sms:?body=${encodeURIComponent(shareText)}`, '_blank');
-            };
-            
-            document.getElementById('copyLinkBtn').onclick = () => {
-                navigator.clipboard.writeText(link);
-                toast('Link copied!', 'success');
-            };
-            
-            document.getElementById('openLinkBtn').onclick = () => {
-                window.open(link, '_blank');
-            };
-            
-            document.getElementById('sessionBtn').onclick = () => {
-                window.open(`https://getsession.org/?text=${encodeURIComponent(shareText)}`, '_blank');
-            };
-            
             document.getElementById('threemaBtn').onclick = () => {
                 window.open(`threema://compose?text=${encodeURIComponent(shareText)}`, '_blank');
             };
-            
-            document.getElementById('wireBtn').onclick = () => {
-                window.open(`wire://message?text=${encodeURIComponent(shareText)}`, '_blank');
+            document.getElementById('emailBtn').onclick = () => {
+                window.open(`mailto:?subject=EARBOMB Nachricht&body=${encodeURIComponent(shareText)}`, '_blank');
             };
-            
-            document.getElementById('messengerBtn').onclick = () => {
-                window.open(`fb-messenger://share?link=${encodeURIComponent(link)}`, '_blank');
+            document.getElementById('smsBtn').onclick = () => {
+                window.open(`sms:?body=${encodeURIComponent(shareText)}`, '_blank');
             };
-            
-            document.getElementById('twitterBtn').onclick = () => {
-                window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(link)}`, '_blank');
+            document.getElementById('copyLinkBtn').onclick = () => {
+                navigator.clipboard.writeText(link).then(() => toast('Link kopiert!', 'success'));
             };
-            
-            document.getElementById('skypeBtn').onclick = () => {
-                window.open(`skype:?chat&topic=${encodeURIComponent('EARBOMB Message')}&body=${encodeURIComponent(shareText)}`, '_blank');
+            document.getElementById('openLinkBtn').onclick = () => {
+                window.open(link, '_blank');
             };
-            
             document.getElementById('qrDownloadBtn').onclick = () => {
                 downloadQRCode(link);
             };

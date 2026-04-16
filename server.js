@@ -1,6 +1,7 @@
 const express = require('express');
 const crypto = require('crypto');
 const path = require('path');
+const QRCode = require('qrcode');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -45,6 +46,18 @@ app.get('/api/config', (req, res) => {
         adTopEnabled: false,
         adBottomEnabled: false
     });
+});
+
+app.get('/api/qr', async (req, res) => {
+    const { url } = req.query;
+    if (!url) return res.status(400).send('url required');
+    try {
+        const png = await QRCode.toBuffer(url, { errorCorrectionLevel: 'H', width: 300, margin: 2 });
+        res.setHeader('Content-Type', 'image/png');
+        res.send(png);
+    } catch (err) {
+        res.status(500).send('QR error');
+    }
 });
 
 app.post('/api/create', (req, res) => {
