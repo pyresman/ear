@@ -1048,36 +1048,36 @@
         }
         
         function checkUrl() {
-            // Check hash (e.g., https://earbomb.org/#ABCDEF)
+            let code = null;
+
             const hash = window.location.hash.slice(1);
             if (hash && hash.length >= 6) {
-                document.querySelector('[data-tab="receive"]').click();
-                codeInput.value = hash.toUpperCase();
-                setTimeout(() => loadBtn.click(), 300);
+                code = hash.toUpperCase();
                 history.replaceState(null, '', window.location.pathname);
-                return;
             }
-            
-            // Check query parameter (e.g., https://earbomb.org/?code=ABCDEF)
-            const urlParams = new URLSearchParams(window.location.search);
-            const codeParam = urlParams.get('code');
-            if (codeParam && codeParam.length >= 6) {
-                document.querySelector('[data-tab="receive"]').click();
-                codeInput.value = codeParam.toUpperCase();
-                setTimeout(() => loadBtn.click(), 300);
-                // Remove query parameter from URL without reload
-                const newUrl = window.location.pathname + window.location.hash;
-                history.replaceState(null, '', newUrl);
-                return;
+
+            if (!code) {
+                const urlParams = new URLSearchParams(window.location.search);
+                const codeParam = urlParams.get('code');
+                if (codeParam && codeParam.length >= 6) {
+                    code = codeParam.toUpperCase();
+                    const newUrl = window.location.pathname + window.location.hash;
+                    history.replaceState(null, '', newUrl);
+                }
             }
-            
-            // Check path (e.g., https://earbomb.org/ABCDEF) - for future server-side routing
-            const path = window.location.pathname.slice(1);
-            if (path && /^[A-Z0-9]{6,}$/i.test(path)) {
+
+            if (!code) {
+                const path = window.location.pathname.slice(1);
+                if (path && /^[A-Z0-9]{6,}$/i.test(path)) {
+                    code = path.toUpperCase();
+                    history.replaceState(null, '', '/');
+                }
+            }
+
+            if (code) {
                 document.querySelector('[data-tab="receive"]').click();
-                codeInput.value = path.toUpperCase();
-                setTimeout(() => loadBtn.click(), 300);
-                history.replaceState(null, '', window.location.pathname);
+                codeInput.value = code;
+                toast('Code erkannt — klicke Unlock zum Abspielen', 'info');
             }
         }
         
