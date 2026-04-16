@@ -50,6 +50,13 @@ function hashPassword(password) {
     return crypto.createHash('sha256').update(password).digest('hex');
 }
 
+app.use((req, res, next) => {
+    if (req.path.startsWith('/api/')) {
+        console.log(`[${new Date().toISOString()}] ${req.method} ${req.path} | host:${req.get('host')} | ua:${(req.get('user-agent')||'').slice(0,40)}`);
+    }
+    next();
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json({ limit: '10mb' }));
 
