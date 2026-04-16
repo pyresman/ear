@@ -142,25 +142,35 @@
         .btn {
             width: 100%;
             padding: 16px;
-            border: none;
             border-radius: 12px;
             font-size: 1.1em;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
             margin-top: 15px;
+            border: 1px solid rgba(255,255,255,0.18);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.22);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.25);
         }
         .btn-primary {
-            background: linear-gradient(135deg, #ff6b6b, #ffa500);
+            background: linear-gradient(160deg, #ff8c70 0%, #ff6b6b 45%, #e05500 100%);
             color: #fff;
+            border-color: rgba(255,140,100,0.45);
         }
-        .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(255,107,107,0.4); }
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(255,107,107,0.55), inset 0 1px 0 rgba(255,255,255,0.3);
+        }
         .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-secondary {
-            background: rgba(255,255,255,0.1);
+            background: linear-gradient(160deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.07) 100%);
             color: #fff;
+            border-color: rgba(255,255,255,0.2);
         }
-        .btn-secondary:hover { background: rgba(255,255,255,0.2); }
+        .btn-secondary:hover {
+            background: linear-gradient(160deg, rgba(255,255,255,0.26) 0%, rgba(255,255,255,0.13) 100%);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+        }
         
         .result { display: none; text-align: center; animation: fadeIn 0.4s; }
         .result.show { display: block; }
@@ -219,7 +229,7 @@
             flex: 1;
             min-width: 120px;
             padding: 12px 16px;
-            border: none;
+            border: 1px solid rgba(255,255,255,0.22);
             border-radius: 10px;
             font-size: 0.9em;
             font-weight: 600;
@@ -229,21 +239,26 @@
             justify-content: center;
             gap: 8px;
             transition: all 0.3s;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.28);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
         }
-        .share-btn.whatsapp { background: #25D366; color: #fff; }
-        .share-btn.telegram { background: #0088cc; color: #fff; }
-        .share-btn.signal { background: #3a76f0; color: #fff; }
-        .share-btn.email { background: #ea4335; color: #fff; }
-        .share-btn.sms { background: #34a853; color: #fff; }
-        .share-btn.clipboard { background: rgba(255,255,255,0.1); color: #fff; }
-        .share-btn.native { background: linear-gradient(135deg, #ff6b6b, #ffa500); color: #fff; }
-        .share-btn.session { background: #1c1c1e; color: #fff; }
-        .share-btn.threema { background: #3fe669; color: #fff; }
-        .share-btn.qrdownload { background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; }
-        .share-btn:hover { transform: translateY(-2px); opacity: 0.9; }
+        .share-btn.whatsapp { background: linear-gradient(160deg, #2ee86e, #25D366 50%, #1aad52 100%); color: #fff; border-color: rgba(100,255,150,0.35); }
+        .share-btn.telegram { background: linear-gradient(160deg, #29aaee, #0088cc 50%, #006aaa 100%); color: #fff; border-color: rgba(80,180,255,0.35); }
+        .share-btn.signal { background: linear-gradient(160deg, #5c96ff, #3a76f0 50%, #2255cc 100%); color: #fff; border-color: rgba(100,150,255,0.35); }
+        .share-btn.email { background: linear-gradient(160deg, #f55, #ea4335 50%, #c0392b 100%); color: #fff; border-color: rgba(255,100,80,0.35); }
+        .share-btn.session { background: linear-gradient(160deg, #3a3a3d, #1c1c1e 50%, #0a0a0b 100%); color: #fff; border-color: rgba(255,255,255,0.2); }
+        .share-btn.clipboard { background: linear-gradient(160deg, rgba(255,255,255,0.2), rgba(255,255,255,0.08) 100%); color: #fff; border-color: rgba(255,255,255,0.22); }
+        .share-btn.native { background: linear-gradient(160deg, #ff9070, #ff6b6b 50%, #e04400 100%); color: #fff; border-color: rgba(255,150,100,0.35); }
+        .share-btn.threema { background: linear-gradient(160deg, #5fff88, #3fe669 50%, #28cc50 100%); color: #fff; border-color: rgba(80,255,130,0.35); }
+        .share-btn.qrdownload { background: linear-gradient(160deg, #8ba4ff, #667eea 50%, #5060cc 100%); color: #fff; border-color: rgba(130,150,255,0.35); }
+        .share-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.35);
+            opacity: 0.92;
+        }
         .share-btn img { display: block; flex-shrink: 0; }
         
-        .btn-group { display: flex; gap: 10px; }
+        .btn-group { display: flex; gap: 10px; margin-top: 22px; }
         .btn-group .btn { margin-top: 0; flex: 1; }
         
         .input-group { margin-bottom: 20px; }
@@ -473,9 +488,9 @@
                         <img src="/icons/email.svg" width="20" height="20" alt="">
                         E-Mail
                     </button>
-                    <button class="share-btn sms" id="smsBtn">
-                        <img src="/icons/sms.svg" width="20" height="20" alt="">
-                        SMS
+                    <button class="share-btn session" id="sessionBtn">
+                        <img src="/icons/session.svg" width="20" height="20" alt="">
+                        Session
                     </button>
                     <button class="share-btn clipboard" id="copyLinkBtn">
                         <img src="/icons/copy.svg" width="20" height="20" alt="">
@@ -719,8 +734,8 @@
             document.getElementById('emailBtn').onclick = () => {
                 window.open(`mailto:?subject=EARBOMB Nachricht&body=${encodeURIComponent(shareText)}`, '_blank');
             };
-            document.getElementById('smsBtn').onclick = () => {
-                window.open(`sms:?body=${encodeURIComponent(shareText)}`, '_blank');
+            document.getElementById('sessionBtn').onclick = () => {
+                navigator.clipboard.writeText(shareText).then(() => toast('Für Session kopiert — in Session einfügen!', 'success'));
             };
             document.getElementById('copyLinkBtn').onclick = () => {
                 navigator.clipboard.writeText(link).then(() => toast('Link kopiert!', 'success'));
