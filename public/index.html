@@ -560,7 +560,7 @@
         let timerInterval, seconds = 0, currentCode = null, currentPassword = null, currentLink = null, audioElement = null;
         
         function apiUrl(path) {
-            const base = window.API_BASE_URL || 'https://api.earbomb.org';
+            const base = (typeof window.API_BASE_URL !== 'undefined') ? window.API_BASE_URL : 'https://api.earbomb.org';
             return base + path;
         }
         
