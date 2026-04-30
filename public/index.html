@@ -538,9 +538,59 @@
         let mediaRecorder, audioChunks = [], audioBlob = null, isRecording = false;
         let timerInterval, seconds = 0, currentCode = null, currentPassword = null, currentLink = null, audioElement = null;
         
-        function apiUrl(path) {
-            const base = (typeof window.API_BASE_URL !== 'undefined') ? window.API_BASE_URL : 'https://api.earbomb.org';
-            return base + path;
+        const DEFAULT_API_FALLBACKS = ['https://earbomb.cliphoster.workers.dev'];
+        let ACTIVE_API_BASE = null;
+
+        function normalizeBase(base) {
+            if (!base) return '';
+            return String(base).trim().replace(/\/+$/, '');
+        }
+
+        function getApiBases() {
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                return [''];
+            }
+
+            const bases = [];
+            if (Array.isArray(window.API_BASE_URLS)) {
+                for (const base of window.API_BASE_URLS) {
+                    const normalized = normalizeBase(base);
+                    if (normalized && !bases.includes(normalized)) bases.push(normalized);
+                }
+            }
+
+            const configuredBase = normalizeBase(window.API_BASE_URL);
+            if (configuredBase && !bases.includes(configuredBase)) bases.push(configuredBase);
+
+            for (const fallback of DEFAULT_API_FALLBACKS) {
+                const normalized = normalizeBase(fallback);
+                if (normalized && !bases.includes(normalized)) bases.push(normalized);
+            }
+
+            return bases.length ? bases : [''];
+        }
+
+        function apiUrl(path, base = null) {
+            const normalizedBase = normalizeBase(base);
+            if (!normalizedBase) return path;
+            return normalizedBase + path;
+        }
+
+        async function fetchApi(path, options = {}) {
+            const bases = ACTIVE_API_BASE ? [ACTIVE_API_BASE, ...getApiBases().filter(b => b !== ACTIVE_API_BASE)] : getApiBases();
+            let lastError = null;
+
+            for (const base of bases) {
+                try {
+                    const response = await fetch(apiUrl(path, base), options);
+                    ACTIVE_API_BASE = base;
+                    return response;
+                } catch (err) {
+                    lastError = err;
+                }
+            }
+
+            throw lastError || new Error('API unreachable');
         }
         
         function getShareableLink(code, useHash = false) {
@@ -645,7 +695,7 @@
                         payload.password = passwordInput.value;
                     }
                     
-                    const res = await fetch(apiUrl('/api/create'), {
+                    const res = await fetchApi('/api/create', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
@@ -683,21 +733,24 @@
                 reader.readAsDataURL(audioBlob);
             } catch (err) {
                 toast('Connection error', 'error');
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Generate Code';
             }
-            
-            sendBtn.disabled = false;
-            sendBtn.textContent = 'Generate Code';
         });
         
+        function getQrUrl(text) {
+            return 'https://api.qrserver.com/v1/create-qr-code/?size=512x512&data=' + encodeURIComponent(text);
+        }
+
         function generateQRCode(text) {
             const img = document.getElementById('qrCanvas');
-            img.src = '/api/qr?url=' + encodeURIComponent(text);
+            img.src = getQrUrl(text);
         }
         
         function downloadQRCode(text) {
             const link = document.createElement('a');
             link.download = 'earbomb-qr.png';
-            link.href = '/api/qr?url=' + encodeURIComponent(text);
+            link.href = getQrUrl(text);
             link.click();
             toast('QR Code gespeichert!', 'success');
         }
@@ -788,7 +841,7 @@
             loadBtn.textContent = 'Loading...';
             
             try {
-                const res = await fetch(apiUrl(`/api/message/${code}`));
+                const res = await fetchApi(`/${code}`);
                 const data = await res.json();
                 
                 if (data.exists) {
@@ -804,7 +857,7 @@
                         }
                     }
                     
-                    const playRes = await fetch(apiUrl(`/api/message/${code}/play`), {
+                    const playRes = await fetchApi(`/${code}/play`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ password: receivePassword.value || '' })
@@ -943,7 +996,7 @@
         // Banner system
         async function loadBanners() {
             try {
-                const res = await fetch(apiUrl('/api/banners'));
+                const res = await fetchApi('/api/banners');
                 const cfg = await res.json();
 
                 const bannerTop    = document.getElementById('bannerTop');
@@ -991,7 +1044,12 @@
                 }
 
             } catch (err) {
-                console.error('Failed to load banners:', err);
+                console.warn('Banners not available, using default configuration');
+                // Fallback to default banner configuration
+                const bannerTop = document.getElementById('bannerTop');
+                const bannerBottom = document.getElementById('bannerBottom');
+                bannerTop.style.display = 'none';
+                bannerBottom.style.display = 'none';
             }
         }
         
